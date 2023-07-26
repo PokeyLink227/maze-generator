@@ -150,13 +150,13 @@ void generate_image(vector3 dimensions, byte *data) {
     vector2 image_dimensions = (vector2){(dimensions.x * 2 + 1), (dimensions.y * 2 + 1)};
     color_rgb *pixels = (color_rgb *)malloc(sizeof(color_rgb) * image_dimensions.x * image_dimensions.y);
 
-    for (int i = 0; i < image_dimensions.x * image_dimensions.y; i++) pixels[i] = (color_rgb){0xff, 0xff, 0xff};
+    for (int i = 0; i < image_dimensions.x * image_dimensions.y; i++) pixels[i] = (color_rgb){0x00, 0x00, 0x00};
 
 
     for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) {
-        pixels[(y * 2 + 1) * (image_dimensions.x) + (x * 2 + 1)] = (color_rgb){0x00, 0x00, 0x00};
-        if (!data[(y * dimensions.x + x) * 7 + 1 + SOUTH]) pixels[(y * 2 + 2) * (image_dimensions.x) + (x * 2 + 1)] = (color_rgb){0x00, 0x00, 0x00};
-        if (!data[(y * dimensions.x + x) * 7 + 1 + EAST]) pixels[(y * 2 + 1) * (image_dimensions.x) + (x * 2 + 2)] = (color_rgb){0x00, 0x00, 0x00};
+        pixels[(y * 2 + 1) * (image_dimensions.x) + (x * 2 + 1)] = (color_rgb){0xff, 0xff, 0xff};
+        if (!data[(y * dimensions.x + x) * 7 + 1 + SOUTH]) pixels[(y * 2 + 2) * (image_dimensions.x) + (x * 2 + 1)] = (color_rgb){0xff, 0xff, 0xff};
+        if (!data[(y * dimensions.x + x) * 7 + 1 + EAST]) pixels[(y * 2 + 1) * (image_dimensions.x) + (x * 2 + 2)] = (color_rgb){0xff, 0xff, 0xff};
     }
 
     byte *header, *pixel_array;
@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
     int t = time(0);
     //printf("seed: %i\n", t);
     srand(1982739873);
-    vector3 dimensions = {1000, 1000, 1};
+    vector3 dimensions = {100, 100, 1};
 
     byte *nodes = create_maze(dimensions, 0);
     /*
