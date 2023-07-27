@@ -14,59 +14,63 @@ enum direction {
 
 typedef unsigned char byte;
 
-typedef struct vector3 {
-    int x, y, z;
-} vector3;
+typedef struct Node {
+    byte north, east, up, south, west, down, visited;
+} Node;
 
-typedef struct vector2 {
+typedef struct Vector3 {
+    int x, y, z;
+} Vector3;
+
+typedef struct Vector2 {
     int x, y;
-} vector2;
+} Vector2;
 
 typedef struct box {
-    vector3 position, dimensions;
+    Vector3 position, dimensions;
 } box;
 
-vector3 vecadd(vector3 lhs, vector3 rhs) {
-    return (vector3){lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z};
+Vector3 vecadd(Vector3 lhs, Vector3 rhs) {
+    return (Vector3){lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z};
 }
 
-typedef struct stack {
+typedef struct V3Stack {
     int max_size, top_element;
-    vector3 elements[];
-} stack;
+    Vector3 elements[];
+} V3Stack;
 
-stack *create_stack(int size) {
-    stack *s = (stack *)malloc(sizeof(stack) + sizeof(vector3) * size);
+V3Stack *create_stack(int size) {
+    V3Stack *s = (V3Stack *)malloc(sizeof(V3Stack) + sizeof(Vector3) * size);
     s->max_size = size;
     s->top_element = -1;
     return s;
 }
 
-byte push(stack *s, vector3 data) {
+byte Push(V3Stack *s, Vector3 data) {
     if (s->top_element == s->max_size - 1) return 0;
     s->elements[++s->top_element] = data;
     return 1;
 }
 
-vector3 pop(stack *s) {
-    if (s->top_element == -1) return (vector3){0, 0, 0};
+Vector3 Pop(V3Stack *s) {
+    if (s->top_element == -1) return (Vector3){0, 0, 0};
     return s->elements[s->top_element--];
 }
 
-vector3 peek(stack *s) {
-    if (s->top_element == -1) return (vector3){0, 0, 0};
+Vector3 Peek(V3Stack *s) {
+    if (s->top_element == -1) return (Vector3){0, 0, 0};
     return s->elements[s->top_element];
 }
 
-byte is_empty(stack *s) {
+byte is_empty(V3Stack *s) {
     return s->top_element == 0;
 }
 
-int pos_in_array(vector3 pos, vector3 dimensions) {
+int pos_in_array(Vector3 pos, Vector3 dimensions) {
     return (pos.x + pos.y * dimensions.x + pos.z * dimensions.x * dimensions.y);
 }
 
-byte contains(box box, vector3 point) {
+byte contains(box box, Vector3 point) {
     if (
         point.x >= box.dimensions.x || point.x < box.position.x ||
         point.y >= box.dimensions.y || point.y < box.position.y ||
@@ -75,12 +79,12 @@ byte contains(box box, vector3 point) {
     return 1;
 }
 
-byte *create_maze(vector3 dimensions, vector3 *exclusions) {
+byte *create_maze(Vector3 dimensions, Vector3 *exclusions) {
     int num_nodes = dimensions.x * dimensions.y * dimensions.z;
 
-    box bounding_box = (box){(vector3){0, 0, 0}, dimensions};
+    box bounding_box = (box){(Vector3){0, 0, 0}, dimensions};
 
-    vector3 directions_v[6] = {
+    Vector3 directions_v[6] = {
         {0, -1, 0},
         {1, 0, 0},
         {0, 0, 1},
@@ -97,10 +101,10 @@ byte *create_maze(vector3 dimensions, vector3 *exclusions) {
         else nodes[i] = 1;
     }
 
-    stack *visited = create_stack(num_nodes);
+    V3Stack *visited = create_stack(num_nodes);
 
     int num_visited = 0;
-    vector3 pos = {0, 0, 0};
+    Vector3 pos = {0, 0, 0};
     byte dirs[6];
     byte num_dirs, selected_dir;
 
@@ -111,7 +115,7 @@ byte *create_maze(vector3 dimensions, vector3 *exclusions) {
         if (nodes[pos_in_array(pos, dimensions) * 7] == 0) {
             num_visited++;
             nodes[pos_in_array(pos, dimensions) * 7] = 1;
-            push(visited, pos);
+            Push(visited, pos);
         }
 
         // find next node to travel to
@@ -134,8 +138,8 @@ byte *create_maze(vector3 dimensions, vector3 *exclusions) {
             nodes[pos_in_array(pos, dimensions) * 7 + (selected_dir + 3) % 6 + 1] = 0;
         }
         else {
-            pop(visited);
-            pos = peek(visited);
+            Pop(visited);
+            pos = Peek(visited);
             //printf("backtracking to (%i, %i, %i)\n", pos.x, pos.y, pos.z);
         }
     }
@@ -143,11 +147,11 @@ byte *create_maze(vector3 dimensions, vector3 *exclusions) {
     return nodes;
 }
 
-void generate_image(vector3 dimensions, byte *data) {
+void generate_image(Vector3 dimensions, byte *data) {
 
     //create a grid of size (x * 4 + 1) * (y * 4 + 1) * (z + y * 3)
     int num_nudes = dimensions.x * dimensions.y * dimensions.z;
-    vector2 image_dimensions = (vector2){(dimensions.x * 2 + 1), (dimensions.y * 2 + 1)};
+    Vector2 image_dimensions = (Vector2){(dimensions.x * 2 + 1), (dimensions.y * 2 + 1)};
     color_rgb *pixels = (color_rgb *)malloc(sizeof(color_rgb) * image_dimensions.x * image_dimensions.y);
 
     for (int i = 0; i < image_dimensions.x * image_dimensions.y; i++) pixels[i] = (color_rgb){0x00, 0x00, 0x00};
@@ -176,7 +180,7 @@ int main(int argc, char **argv) {
     int t = time(0);
     //printf("seed: %i\n", t);
     srand(1982739873);
-    vector3 dimensions = {100, 100, 1};
+    Vector3 dimensions = {100, 100, 1};
 
     byte *nodes = create_maze(dimensions, 0);
     /*
