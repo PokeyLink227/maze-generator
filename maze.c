@@ -15,7 +15,7 @@ enum direction {
 typedef unsigned char byte;
 
 typedef struct Node {
-    byte north, east, up, south, west, down, visited;
+    byte visited, walls[6];
 } Node;
 
 typedef struct Vector3 {
@@ -79,7 +79,7 @@ byte contains(box box, Vector3 point) {
     return 1;
 }
 
-byte *create_maze(Vector3 dimensions, Vector3 *exclusions) {
+Node *create_maze(Vector3 dimensions, Vector3 *exclusions) {
     int num_nodes = dimensions.x * dimensions.y * dimensions.z;
 
     box bounding_box = (box){(Vector3){0, 0, 0}, dimensions};
@@ -94,12 +94,9 @@ byte *create_maze(Vector3 dimensions, Vector3 *exclusions) {
     };
     char c[6] = {'N', 'E', 'U', 'S', 'W', 'D'};
 
-    byte *nodes = (byte *)malloc(sizeof(byte) * 7 * num_nodes);
+    Node *nodes = (Node *)malloc(sizeof(Node) * num_nodes);
     // set visited to 0 and all walls to active (1)
-    for (int i = 0; i < num_nodes * 7; i++) {
-        if (i % 7 == 0) nodes[i] = 0;
-        else nodes[i] = 1;
-    }
+    for (int i = 0; i < num_nodes; i++) nodes[i] = (Node){0, {1, 1, 1, 1, 1, 1}};
 
     V3Stack *visited = create_stack(num_nodes);
 
@@ -110,32 +107,26 @@ byte *create_maze(Vector3 dimensions, Vector3 *exclusions) {
 
     while (num_visited < num_nodes) {
         //mark current node as visited
-        //printf("%i nodes visited\n", num_visited);
 
-        if (nodes[pos_in_array(pos, dimensions) * 7] == 0) {
+        if (nodes[pos_in_array(pos, dimensions)].visited == 0) {
             num_visited++;
-            nodes[pos_in_array(pos, dimensions) * 7] = 1;
+            nodes[pos_in_array(pos, dimensions)].visited = 1;
             Push(visited, pos);
         }
 
         // find next node to travel to
         // get list of all nodes that can be traveled to and pick a random one
         num_dirs = 0;
-        for (byte i = 0; i < 6; i++)
-            if (contains(bounding_box, vecadd(pos, directions_v[i])) && !nodes[pos_in_array(vecadd(pos, directions_v[i]), dimensions) * 7]) {
-                dirs[num_dirs++] = i;
-            }
+        for (byte i = 0; i < 6; i++) if (contains(bounding_box, vecadd(pos, directions_v[i])) && !nodes[pos_in_array(vecadd(pos, directions_v[i]), dimensions)].visited) dirs[num_dirs++] = i;
 
-        //printf("%i\n", num_dirs);
         if (num_dirs > 0) { // a new path is available
-
             selected_dir = dirs[rand() % num_dirs];
 
             // set walls to 0 bewteen 2 nodes
             //printf("connecting %c from (%i, %i, %i) to (%i, %i, %i)\n", c[selected_dir], pos.x, pos.y, pos.z, vecadd(pos, directions_v[selected_dir]).x, vecadd(pos, directions_v[selected_dir]).y, vecadd(pos, directions_v[selected_dir]).z);
-            nodes[pos_in_array(pos, dimensions) * 7 + selected_dir + 1] = 0;
+            nodes[pos_in_array(pos, dimensions)].walls[selected_dir] = 0;
             pos = vecadd(pos, directions_v[selected_dir]);
-            nodes[pos_in_array(pos, dimensions) * 7 + (selected_dir + 3) % 6 + 1] = 0;
+            nodes[pos_in_array(pos, dimensions)].walls[(selected_dir + 3) % 6] = 0;
         }
         else {
             Pop(visited);
@@ -143,24 +134,25 @@ byte *create_maze(Vector3 dimensions, Vector3 *exclusions) {
             //printf("backtracking to (%i, %i, %i)\n", pos.x, pos.y, pos.z);
         }
     }
-
     return nodes;
 }
 
-void generate_image(Vector3 dimensions, byte *data) {
 
+void generate_image(Vector3 dimensions, Node *data) {
+    int passage_width = 40, wall_width = 10;
+    int cell_width = passage_width + wall_width;
     //create a grid of size (x * 4 + 1) * (y * 4 + 1) * (z + y * 3)
     int num_nudes = dimensions.x * dimensions.y * dimensions.z;
-    Vector2 image_dimensions = (Vector2){(dimensions.x * 2 + 1), (dimensions.y * 2 + 1)};
+    Vector2 image_dimensions = (Vector2){(dimensions.x * cell_width + wall_width), (dimensions.y * cell_width + wall_width)};
     color_rgb *pixels = (color_rgb *)malloc(sizeof(color_rgb) * image_dimensions.x * image_dimensions.y);
 
     for (int i = 0; i < image_dimensions.x * image_dimensions.y; i++) pixels[i] = (color_rgb){0x00, 0x00, 0x00};
 
 
     for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) {
-        pixels[(y * 2 + 1) * (image_dimensions.x) + (x * 2 + 1)] = (color_rgb){0xff, 0xff, 0xff};
-        if (!data[(y * dimensions.x + x) * 7 + 1 + SOUTH]) pixels[(y * 2 + 2) * (image_dimensions.x) + (x * 2 + 1)] = (color_rgb){0xff, 0xff, 0xff};
-        if (!data[(y * dimensions.x + x) * 7 + 1 + EAST]) pixels[(y * 2 + 1) * (image_dimensions.x) + (x * 2 + 2)] = (color_rgb){0xff, 0xff, 0xff};
+        for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.x) + (x * cell_width + wall_width + off_x)] = (color_rgb){0xff, 0xff, 0xff};
+        if (!data[y * dimensions.x + x].walls[SOUTH]) for (int off_y = 0; off_y < wall_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[((y + 1) * cell_width + off_y) * (image_dimensions.x) + (x * cell_width + wall_width + off_x)] = (color_rgb){0xff, 0xff, 0xff};
+        if (!data[y * dimensions.x + x].walls[EAST]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < wall_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.x) + ((x + 1) * cell_width + off_x)] = (color_rgb){0xff, 0xff, 0xff};
     }
 
     byte *header, *pixel_array;
@@ -173,6 +165,7 @@ void generate_image(Vector3 dimensions, byte *data) {
 
 
 
+
 int main(int argc, char **argv) {
 
     printf("%c, %c, %c, %c, %c, %c, %c, %c, %c, %c, %c\n", 179, 180, 191, 192, 193, 194, 195, 196, 197, 217, 218);
@@ -180,14 +173,17 @@ int main(int argc, char **argv) {
     int t = time(0);
     //printf("seed: %i\n", t);
     srand(1982739873);
-    Vector3 dimensions = {100, 100, 1};
+    Vector3 dimensions = {20, 20, 1};
 
-    byte *nodes = create_maze(dimensions, 0);
+    Node *nodes = create_maze(dimensions, 0);
+
     /*
     for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) {
-        printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i * 7] ? "visited" : "not visited"), (nodes[i * 7 + 1 + NORTH] ? '-' : 'N'), (nodes[i * 7 + 1 + SOUTH] ? '-' : 'S'), (nodes[i * 7 + 1 + EAST] ? '-' : 'E'), (nodes[i * 7 + 1 + WEST] ? '-' : 'W'), (nodes[i * 7 + 1 + UP] ? '-' : 'U'), (nodes[i * 7 + 1 + DOWN] ? '-' : 'D'));
+        printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i].visited ? "visited" : "not visited"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'));
     }
     */
+
+
     generate_image(dimensions, nodes);
 
 }
