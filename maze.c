@@ -98,6 +98,8 @@ Node *create_maze(Vector3 dimensions, Vector3 *exclusions) {
     // set visited to 0 and all walls to active (1)
     for (int i = 0; i < num_nodes; i++) nodes[i] = (Node){0, {1, 1, 1, 1, 1, 1}};
 
+    // in order to add rooms, set nodes to visited and increment starting num_visited value. to save memory you can also create a smaller stack and decrement num_nodes
+
     V3Stack *visited = create_stack(num_nodes);
 
     int num_visited = 0;
@@ -169,7 +171,6 @@ void generate_image(Vector3 dimensions, Node *data) {
 int main(int argc, char **argv) {
 
     printf("%c, %c, %c, %c, %c, %c, %c, %c, %c, %c, %c\n", 179, 180, 191, 192, 193, 194, 195, 196, 197, 217, 218);
-
     int t = time(0);
     //printf("seed: %i\n", t);
     srand(1982739873);
