@@ -43,9 +43,9 @@ byte *generate_pixel_array(byte *header, color_rgb *pixels) {
     return pixel_array;
 }
 
-void export_image(byte *header, byte *pixel_array) {
+void export_image(byte *header, byte *pixel_array, char *file_name) {
     FILE *fp;
-    fp = fopen("out.bmp", "wb");
+    fp = fopen(file_name, "wb");
     fwrite(header, 1, 54, fp);
     fwrite(pixel_array, 1, *((int *)(header + 34)), fp);
     fclose(fp);

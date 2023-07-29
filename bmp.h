@@ -11,4 +11,4 @@ byte *generate_header(int, int);
 
 byte *generate_pixel_array(byte *, color_rgb *);
 
-void export_image(byte *, byte *);
+void export_image(byte *, byte *, char *);

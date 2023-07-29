@@ -106,8 +106,6 @@ Node *create_maze_basic(Vector3 dimensions, Vector3 *exclusions) {
         {-1, 0, 0},
         {0, 0, -1},
     };
-    char c[6] = {'N', 'E', 'U', 'S', 'W', 'D'};
-
 
     // in order to add rooms, set nodes to visited and increment starting num_visited value. to save memory you can also create a smaller stack and decrement num_nodes
 
@@ -160,10 +158,12 @@ need to fix the open list, doesnt contain the correct elements
 Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
     int num_nodes = dimensions.x * dimensions.y * dimensions.z;
     Node *nodes = (Node *)malloc(sizeof(struct Node) * num_nodes);
-    Vector3 *open = (Vector3 *)malloc(sizeof(struct Vector3) * num_nodes); // stores indexes of nodes
+    Vector3 *open = (Vector3 *)malloc(sizeof(struct Vector3) * num_nodes); // stores node positions
+    int *open_pos = (int *)malloc(sizeof(int) * num_nodes); // stores index of node position in open list
     for (int i = 0; i < num_nodes; i++) {
         nodes[i] = (Node){0, 0, {1, 1, 1, 1, 1, 1}, -1};
         open[i] = (Vector3){i % dimensions.x, i / dimensions.x, 0};
+        open_pos[i] = i;
     }
 
     box bounding_box = (box){(Vector3){0, 0, 0}, dimensions};
@@ -175,11 +175,12 @@ Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
         {-1, 0, 0},
         {0, 0, -1},
     };
-    char c[6] = {'N', 'E', 'U', 'S', 'W', 'D'};
 
     int open_len = num_nodes, current_node_index, next_node_index;
+
     int n = rand() % open_len;
-    open[n] = open[--open_len]; // delete index n from list
+    open[n] = open[--open_len]; // delete node n from list found at index open_pos[n]
+    open_pos[open_len] = n;
     nodes[n].visited = INMAZE;
 
     byte dirs[6];
@@ -188,21 +189,16 @@ Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
     Vector3 current_node;
 
     while (open_len > 0) {
-        printf("\n\n\n\n----------open_len: %i\n", open_len);
-        for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i].visited == UNVISITED ? "not visited" : nodes[i].visited == VISITED ? "visited" : "in maze"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'));
         // select an unvisited node
-
 
         do {
             n = rand() % open_len;
             current_node = open[n];
             open[n] = open[--open_len];
+            open_pos[pos_in_array(open[open_len], dimensions)] = n;
             current_node_index = pos_in_array(current_node, dimensions);
         } while (nodes[current_node_index].visited == INMAZE);
         nodes[current_node_index].parent = -1;
-
-        printf("starting from node: %i\n", current_node_index);
-
         // make a loop-erased random walk to the first node in the maze
         while (1) {
             nodes[current_node_index].visited = VISITED;
@@ -211,17 +207,14 @@ Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
             for (byte i = 0; i < 6; i++) if (contains(bounding_box, vecadd(current_node, directions_v[i]))) dirs[num_dirs++] = i;
             selected_dir = dirs[rand() % num_dirs];
             next_node_index = pos_in_array(vecadd(current_node, directions_v[selected_dir]), dimensions);
-            printf("current node: %i,  next node: %i\n", current_node_index, next_node_index);
 
             if (nodes[next_node_index].visited == VISITED) {
                 int fallback = next_node_index;
                 // set all nodes to unvisited until reaching the next node index again
                 while (current_node_index != fallback) {
                     nodes[current_node_index].visited = UNVISITED;
-                    printf("setting %i to unvisited\n", current_node_index);
                     current_node_index = nodes[current_node_index].parent;
                 }
-                printf("after traceback   current node: %i,  next node: %i\n", current_node_index, next_node_index);
                 current_node = (Vector3){current_node_index % dimensions.x, current_node_index / dimensions.x, 0};
             } else {
                 nodes[next_node_index].parent = current_node_index;
@@ -230,12 +223,8 @@ Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
                 current_node_index = next_node_index;
             }
 
-            if (nodes[next_node_index].visited == INMAZE) {
-                printf("stopping on node %i\n", current_node_index);
-                break;
-            }
+            if (nodes[next_node_index].visited == INMAZE) break;
         }
-        for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c] parent: %i\n", i, (nodes[i].visited == UNVISITED ? "not visited" : nodes[i].visited == VISITED ? "visited" : "in maze"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'), nodes[i].parent);
 
         // trace and add visited nodes to maze
         int length = 0;
@@ -250,20 +239,18 @@ Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
                 nodes[current_node_index].visited = INMAZE;
                 break;
             }
-            open_len--;
-        }
-        printf("connected path of length %i\n", length);
-        for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c] parent: %i\n", i, (nodes[i].visited == UNVISITED ? "not visited" : nodes[i].visited == VISITED ? "visited" : "in maze"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'), nodes[i].parent);
 
+            open[open_pos[current_node_index]] = open[--open_len];
+            open_pos[pos_in_array(open[open_len], dimensions)] = open_pos[current_node_index];
+        }
     }
     return nodes;
 }
 
-void generate_image(Vector3 dimensions, Node *data) {
+void generate_image(Vector3 dimensions, Node *data, char *file_name) {
     int passage_width = 40, wall_width = 10;
     int cell_width = passage_width + wall_width;
     //create a grid of size (x * 4 + 1) * (y * 4 + 1) * (z + y * 3)
-    int num_nudes = dimensions.x * dimensions.y * dimensions.z;
     Vector2 image_dimensions = (Vector2){(dimensions.x * cell_width + wall_width), (dimensions.y * cell_width + wall_width)};
     color_rgb *pixels = (color_rgb *)malloc(sizeof(color_rgb) * image_dimensions.x * image_dimensions.y);
 
@@ -280,26 +267,34 @@ void generate_image(Vector3 dimensions, Node *data) {
 
     header = generate_header(image_dimensions.x, image_dimensions.y);
     pixel_array = generate_pixel_array(header, pixels);
-    export_image(header, pixel_array);
+    export_image(header, pixel_array, file_name);
 
 }
 
 int main(int argc, char **argv) {
 
     printf("%c, %c, %c, %c, %c, %c, %c, %c, %c, %c, %c\n", 179, 180, 191, 192, 193, 194, 195, 196, 197, 217, 218);
-    int t = time(0);
-    //printf("seed: %i\n", t);
-    srand(1982739873);
-    Vector3 dimensions = {4, 4, 1};
+    srand(time(0));
+    Vector3 dimensions = {20, 20, 1};
 
+    clock_t start, stop;
+
+    start = clock();
     Node *nodes = create_maze_wilson(dimensions, 0);
+    stop = clock();
+    printf("time: %ld\n", stop - start);
+
+    generate_image(dimensions, nodes, "mz1.bmp");
+
+    start = clock();
+    nodes = create_maze_basic(dimensions, 0);
+    stop = clock();
+    printf("time: %ld\n", stop - start);
 
 
-    for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i].visited ? "visited" : "not visited"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'));
+    //for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i].visited ? "visited" : "not visited"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'));
 
-
-
-    generate_image(dimensions, nodes);
+    generate_image(dimensions, nodes, "mz2.bmp");
 
 }
 
