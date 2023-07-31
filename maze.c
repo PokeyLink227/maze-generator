@@ -258,9 +258,9 @@ void generate_image(Vector3 dimensions, Node *data, char *file_name) {
 
 
     for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) {
-        for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.x) + (x * cell_width + wall_width + off_x)] = (color_rgb){0xff, 0xff, 0xff};
-        if (!data[y * dimensions.x + x].walls[SOUTH]) for (int off_y = 0; off_y < wall_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[((y + 1) * cell_width + off_y) * (image_dimensions.x) + (x * cell_width + wall_width + off_x)] = (color_rgb){0xff, 0xff, 0xff};
-        if (!data[y * dimensions.x + x].walls[EAST]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < wall_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.x) + ((x + 1) * cell_width + off_x)] = (color_rgb){0xff, 0xff, 0xff};
+        for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.x) + (x * cell_width + wall_width + off_x)] = (color_rgb){0xff, 0x99, 0x99};
+        if (!data[y * dimensions.x + x].walls[SOUTH]) for (int off_y = 0; off_y < wall_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[((y + 1) * cell_width + off_y) * (image_dimensions.x) + (x * cell_width + wall_width + off_x)] = (color_rgb){0xff, 0x99, 0x99};
+        if (!data[y * dimensions.x + x].walls[EAST]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < wall_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.x) + ((x + 1) * cell_width + off_x)] = (color_rgb){0xff, 0x99, 0x99};
     }
 
     byte *header, *pixel_array;
