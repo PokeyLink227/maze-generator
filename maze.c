@@ -162,7 +162,7 @@ Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
     int *open_pos = (int *)malloc(sizeof(int) * num_nodes); // stores index of node position in open list
     for (int i = 0; i < num_nodes; i++) {
         nodes[i] = (Node){0, 0, {1, 1, 1, 1, 1, 1}, -1};
-        open[i] = (Vector3){i % dimensions.x, i / dimensions.x, 0};
+        open[i] = (Vector3){i % dimensions.x, i / dimensions.x % dimensions.y, i / (dimensions.x * dimensions.y)};
         open_pos[i] = i;
     }
 
@@ -215,7 +215,7 @@ Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
                     nodes[current_node_index].visited = UNVISITED;
                     current_node_index = nodes[current_node_index].parent;
                 }
-                current_node = (Vector3){current_node_index % dimensions.x, current_node_index / dimensions.x, 0};
+                current_node = (Vector3){current_node_index % dimensions.x, current_node_index / dimensions.x % dimensions.y, current_node_index / (dimensions.x * dimensions.y)};
             } else {
                 nodes[next_node_index].parent = current_node_index;
                 nodes[next_node_index].parent_dir = (selected_dir + 3) % 6;
@@ -251,50 +251,50 @@ void generate_image(Vector3 dimensions, Node *data, char *file_name) {
     int passage_width = 40, wall_width = 10;
     int cell_width = passage_width + wall_width;
     //create a grid of size (x * 4 + 1) * (y * 4 + 1) * (z + y * 3)
-    Vector2 image_dimensions = (Vector2){(dimensions.x * cell_width + wall_width), (dimensions.y * cell_width + wall_width)};
-    color_rgb *pixels = (color_rgb *)malloc(sizeof(color_rgb) * image_dimensions.x * image_dimensions.y);
+    Vector3 image_dimensions = (Vector3){(dimensions.x * cell_width + wall_width), (dimensions.y * cell_width + wall_width), (dimensions.x * cell_width + wall_width) * dimensions.z};
+    color_rgb *pixels = (color_rgb *)malloc(sizeof(color_rgb) * image_dimensions.z * image_dimensions.y);
 
     for (int i = 0; i < image_dimensions.x * image_dimensions.y; i++) pixels[i] = (color_rgb){0x00, 0x00, 0x00};
 
 
-    for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) {
-        for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.x) + (x * cell_width + wall_width + off_x)] = (color_rgb){0xff, 0x99, 0x99};
-        if (!data[y * dimensions.x + x].walls[SOUTH]) for (int off_y = 0; off_y < wall_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[((y + 1) * cell_width + off_y) * (image_dimensions.x) + (x * cell_width + wall_width + off_x)] = (color_rgb){0xff, 0x99, 0x99};
-        if (!data[y * dimensions.x + x].walls[EAST]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < wall_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.x) + ((x + 1) * cell_width + off_x)] = (color_rgb){0xff, 0x99, 0x99};
+    for (int z = 0; z < dimensions.z; z++) for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) {
+        for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = (color_rgb){0xff, 0xff, 0xff};
+        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[SOUTH]) for (int off_y = 0; off_y < wall_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[((y + 1) * cell_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = (color_rgb){0xff, 0xff, 0xff};
+        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[EAST]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < wall_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + ((x + 1) * cell_width + off_x) + (z * image_dimensions.x)] = (color_rgb){0xff, 0xff, 0xff};
     }
 
     byte *header, *pixel_array;
 
-    header = generate_header(image_dimensions.x, image_dimensions.y);
+    header = generate_header(image_dimensions.z, image_dimensions.y);
     pixel_array = generate_pixel_array(header, pixels);
     export_image(header, pixel_array, file_name);
 
 }
 
 int main(int argc, char **argv) {
+    if (argc != 4) {
+        printf("invalid number of arguments. use maze [x] [y] [z]\n");
+        return;
+    }
 
     printf("%c, %c, %c, %c, %c, %c, %c, %c, %c, %c, %c\n", 179, 180, 191, 192, 193, 194, 195, 196, 197, 217, 218);
-    srand(time(0));
-    Vector3 dimensions = {20, 20, 1};
+    srand(77);
+    Vector3 dimensions = {atoi(argv[1]), atoi(argv[2]), atoi(argv[3])};
 
     clock_t start, stop;
 
     start = clock();
-    Node *nodes = create_maze_wilson(dimensions, 0);
+    Node *nodes = create_maze_basic(dimensions, 0);
     stop = clock();
     printf("time: %ld\n", stop - start);
+
 
     generate_image(dimensions, nodes, "mz1.bmp");
 
-    start = clock();
-    nodes = create_maze_basic(dimensions, 0);
-    stop = clock();
-    printf("time: %ld\n", stop - start);
 
+    for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i].visited ? "visited" : "not visited"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'));
 
-    //for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i].visited ? "visited" : "not visited"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'));
-
-    generate_image(dimensions, nodes, "mz2.bmp");
+    //generate_image(dimensions, nodes, "mz2.bmp");
 
 }
 
