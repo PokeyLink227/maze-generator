@@ -254,7 +254,7 @@ void generate_image(Vector3 dimensions, Node *data, char *file_name) {
     Vector3 image_dimensions = (Vector3){(dimensions.x * cell_width + wall_width), (dimensions.y * cell_width + wall_width), (dimensions.x * cell_width + wall_width) * dimensions.z};
     color_rgb *pixels = (color_rgb *)malloc(sizeof(color_rgb) * image_dimensions.z * image_dimensions.y);
 
-    for (int i = 0; i < image_dimensions.x * image_dimensions.y; i++) pixels[i] = (color_rgb){0x00, 0x00, 0x00};
+    for (int i = 0; i < image_dimensions.z * image_dimensions.y; i++) pixels[i] = (color_rgb){0x00, 0x00, 0x00};
 
 
     for (int z = 0; z < dimensions.z; z++) for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) {
