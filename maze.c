@@ -150,10 +150,6 @@ Node *create_maze_basic(Vector3 dimensions, Vector3 *exclusions) {
 
 /*
 create a maze using wilson's algorithm
-
-need to fix the open list, doesnt contain the correct elements
-
-
 */
 Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
     int num_nodes = dimensions.x * dimensions.y * dimensions.z;
@@ -250,7 +246,7 @@ Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
 void generate_image(Vector3 dimensions, Node *data, char *file_name) {
     int passage_width = 40, wall_width = 10;
     int cell_width = passage_width + wall_width;
-    //create a grid of size (x * 4 + 1) * (y * 4 + 1) * (z + y * 3)
+
     Vector3 image_dimensions = (Vector3){(dimensions.x * cell_width + wall_width), (dimensions.y * cell_width + wall_width), (dimensions.x * cell_width + wall_width) * dimensions.z};
     color_rgb *pixels = (color_rgb *)malloc(sizeof(color_rgb) * image_dimensions.z * image_dimensions.y);
 
@@ -272,44 +268,87 @@ void generate_image(Vector3 dimensions, Node *data, char *file_name) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 4) {
-        printf("invalid number of arguments. use maze [x] [y] [z]\n");
-        return;
+
+    byte option_timed = 0;
+    Vector3 dimensions = {10, 10, 1};
+    char *output_file_name = "out.bmp";
+
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-' && argv[i][1] != 0 && argv[i][2] == 0) { // argument is valid flag - [char] \0
+            switch (argv[i][1]) {
+                case 'h':
+                    printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -h                Shows this page\n  -d [x] [y] {z}    Set custom dimensions for maze\n  -t                Enable timer during maze generation\n  -o [name]         Set output file name\n  -f [format]       Set output image format\n  -m [name]         Set method for maze generation");
+                    return 0;
+                    break;
+                case 'd': // set dimensions
+                    if (i + 2 < argc && (argv[i + 1][0] >= '0' && argv[i + 1][0] <= '9') && (argv[i + 2][0] >= '0' && argv[i + 2][0] <= '9')) { // two more arguments that are also numbers exist
+                        dimensions.x = atoi(argv[i + 1]);
+                        dimensions.y = atoi(argv[i + 2]);
+                        i += 2;
+                        if (i + 1 < argc && (argv[i + 1][0] >= '0' && argv[i + 1][0] <= '9')) dimensions.z = atoi(argv[++i]);
+                    } else {
+                        printf("Invalid argument list for flag -d\n");
+                        return 1;
+                    }
+                    break;
+                case 't': // enable timer
+                    option_timed = 1;
+                    break;
+                case 'o': // set output file
+                    if (i + 1 < argc) {
+                        output_file_name = argv[++i];
+                    } else {
+                        printf("Missing output file name\n");
+                        return 1;
+                    }
+                    break;
+                case 'f': // set image format
+                // add options for setting fg bg color and changing cell width
+                default:
+                    printf("Unknown flag %c. use -h for help\n", argv[i][1]);
+            }
+        } else {
+            printf("invalid flag %s\n", argv[i]);
+            return 1;
+        }
     }
 
-    printf("%c, %c, %c, %c, %c, %c, %c, %c, %c, %c, %c\n", 179, 180, 191, 192, 193, 194, 195, 196, 197, 217, 218);
-    srand(77);
-    Vector3 dimensions = {atoi(argv[1]), atoi(argv[2]), atoi(argv[3])};
+
+    if (dimensions.z == 1) printf("Generating 2D maze of size {x: %i, y: %i}\n", dimensions.x, dimensions.y);
+    else printf("Generating 3D maze of size {x: %i, y: %i, z: %i}.  Warning 3D mazes not fully supported yet\n", dimensions.x, dimensions.y, dimensions.z);
+
+    srand(time(0));
 
     clock_t start, stop;
 
-    start = clock();
+    if (option_timed) start = clock();
+
     Node *nodes = create_maze_basic(dimensions, 0);
-    stop = clock();
-    printf("time: %ld\n", stop - start);
+
+    if (option_timed) {
+        stop = clock();
+        printf("time: %ld\n", stop - start);
+    }
 
 
-    generate_image(dimensions, nodes, "mz1.bmp");
+    generate_image(dimensions, nodes, output_file_name);
 
 
-    for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i].visited ? "visited" : "not visited"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'));
+    //for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i].visited ? "visited" : "not visited"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'));
 
     //generate_image(dimensions, nodes, "mz2.bmp");
 
+    return 0;
 }
 
 /*
-
-store walls in adjency matrix
-initalize all nodes to be unconnected
-x - 6, y - 3, z - 2
-x x x x x x
-x x x x x x
-x x x x x x
-
-x x x x x x
-x x x x x x
-x x x x x x
+TODO:
+-try to maybe get rid of the vectors during generation
+-add more command line options
+-improve command parsing
+-add indication for 3d level change
+-add indication for start and end of mazes
+-add support for maze exclusions/rooms
 
 east = index + 1
 west = index - 1
@@ -318,8 +357,6 @@ north = index - x
 up = index + x * y
 down = index - x * y
 
-length of array will be x * y * z
-
-entrance defind
+printf("%c, %c, %c, %c, %c, %c, %c, %c, %c, %c, %c\n", 179, 180, 191, 192, 193, 194, 195, 196, 197, 217, 218);
 
 */
