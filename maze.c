@@ -272,12 +272,13 @@ int main(int argc, char **argv) {
     byte option_timed = 0;
     Vector3 dimensions = {10, 10, 1};
     char *output_file_name = "out.bmp";
+    time_t rand_seed = time(0);
 
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-' && argv[i][1] != 0 && argv[i][2] == 0) { // argument is valid flag - [char] \0
             switch (argv[i][1]) {
                 case 'h':
-                    printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -h                Shows this page\n  -d [x] [y] {z}    Set custom dimensions for maze\n  -t                Enable timer during maze generation\n  -o [name]         Set output file name\n  -f [format]       Set output image format\n  -m [name]         Set method for maze generation");
+                    printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -h                Shows this page\n  -d [x] [y] {z}    Set custom dimensions for maze\n  -t                Enable timer during maze generation\n  -s [number]       Set the rng seed\n  -o [name]         Set output file name\n  -f [format]       Set output image format\n  -m [name]         Set method for maze generation");
                     return 0;
                     break;
                 case 'd': // set dimensions
@@ -293,6 +294,14 @@ int main(int argc, char **argv) {
                     break;
                 case 't': // enable timer
                     option_timed = 1;
+                    break;
+                case 's':
+                    if (i + 1 < argc) {
+                        rand_seed = atoi(argv[++i]);
+                    } else {
+                        printf("Missing seed\n");
+                        return 1;
+                    }
                     break;
                 case 'o': // set output file
                     if (i + 1 < argc) {
@@ -317,7 +326,7 @@ int main(int argc, char **argv) {
     if (dimensions.z == 1) printf("Generating 2D maze of size {x: %i, y: %i}\n", dimensions.x, dimensions.y);
     else printf("Generating 3D maze of size {x: %i, y: %i, z: %i}.  Warning 3D mazes not fully supported yet\n", dimensions.x, dimensions.y, dimensions.z);
 
-    srand(time(0));
+    srand(rand_seed);
 
     clock_t start, stop;
 
