@@ -247,6 +247,16 @@ void generate_image(Vector3 dimensions, Node *data, char *file_name) {
     int passage_width = 40, wall_width = 10;
     int cell_width = passage_width + wall_width;
 
+    color_rgb up_arrow[1600], down_arrow[1600];
+    for (int i = 0; i < 1600; i++) { up_arrow[i] = (color_rgb){0xff, 0xff, 0xff}; down_arrow[i] = (color_rgb){0xff, 0xff, 0xff}; }
+    for (int i = 0; i < 40; i++) for (int j = i; j <= i + 40; j += 40) { up_arrow[j] = (color_rgb){0x55, 0xdd, 0x55}; down_arrow[j] = (color_rgb){0xdd, 0x55, 0x55}; }
+    for (int i = 1560; i < 1600; i++) for (int j = i; j >= i - 40; j -= 40) { up_arrow[j] = (color_rgb){0x55, 0xdd, 0x55}; down_arrow[j] = (color_rgb){0xdd, 0x55, 0x55}; }
+    for (int i = 0; i < 1560; i += 40) for (int j = i; j <= i + 1; j++) { up_arrow[j] = (color_rgb){0x55, 0xdd, 0x55}; down_arrow[j] = (color_rgb){0xdd, 0x55, 0x55}; }
+    for (int i = 39; i < 1600; i += 40) for (int j = i; j >= i - 1; j--) { up_arrow[j] = (color_rgb){0x55, 0xdd, 0x55}; down_arrow[j] = (color_rgb){0xdd, 0x55, 0x55}; }
+
+
+
+
     Vector3 image_dimensions = (Vector3){(dimensions.x * cell_width + wall_width), (dimensions.y * cell_width + wall_width), (dimensions.x * cell_width + wall_width) * dimensions.z};
     color_rgb *pixels = (color_rgb *)malloc(sizeof(color_rgb) * image_dimensions.z * image_dimensions.y);
 
@@ -254,7 +264,10 @@ void generate_image(Vector3 dimensions, Node *data, char *file_name) {
 
 
     for (int z = 0; z < dimensions.z; z++) for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) {
-        for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = (color_rgb){0xff, 0xff, 0xff};
+        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = up_arrow[off_x + off_y * 40];
+        else if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = down_arrow[off_x + off_y * 40];
+        else for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = (color_rgb){0xff, 0xff, 0xff};
+
         if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[SOUTH]) for (int off_y = 0; off_y < wall_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[((y + 1) * cell_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = (color_rgb){0xff, 0xff, 0xff};
         if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[EAST]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < wall_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + ((x + 1) * cell_width + off_x) + (z * image_dimensions.x)] = (color_rgb){0xff, 0xff, 0xff};
     }
@@ -339,13 +352,9 @@ int main(int argc, char **argv) {
         printf("time: %ld\n", stop - start);
     }
 
-
     generate_image(dimensions, nodes, output_file_name);
 
-
     //for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i].visited ? "visited" : "not visited"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'));
-
-    //generate_image(dimensions, nodes, "mz2.bmp");
 
     return 0;
 }
