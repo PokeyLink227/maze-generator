@@ -247,12 +247,23 @@ void generate_image(Vector3 dimensions, Node *data, char *file_name) {
     int passage_width = 40, wall_width = 10;
     int cell_width = passage_width + wall_width;
 
-    color_rgb up_arrow[1600], down_arrow[1600];
-    for (int i = 0; i < 1600; i++) { up_arrow[i] = (color_rgb){0xff, 0xff, 0xff}; down_arrow[i] = (color_rgb){0xff, 0xff, 0xff}; }
-    for (int i = 0; i < 40; i++) for (int j = i; j <= i + 40; j += 40) { up_arrow[j] = (color_rgb){0x55, 0xdd, 0x55}; down_arrow[j] = (color_rgb){0xdd, 0x55, 0x55}; }
-    for (int i = 1560; i < 1600; i++) for (int j = i; j >= i - 40; j -= 40) { up_arrow[j] = (color_rgb){0x55, 0xdd, 0x55}; down_arrow[j] = (color_rgb){0xdd, 0x55, 0x55}; }
-    for (int i = 0; i < 1560; i += 40) for (int j = i; j <= i + 1; j++) { up_arrow[j] = (color_rgb){0x55, 0xdd, 0x55}; down_arrow[j] = (color_rgb){0xdd, 0x55, 0x55}; }
-    for (int i = 39; i < 1600; i += 40) for (int j = i; j >= i - 1; j--) { up_arrow[j] = (color_rgb){0x55, 0xdd, 0x55}; down_arrow[j] = (color_rgb){0xdd, 0x55, 0x55}; }
+    color_rgb up_arrow[1600], down_arrow[1600], multi_arrow[1600];
+    for (int i = 0; i < 1600; i++) { up_arrow[i] = (color_rgb){0xff, 0xff, 0xff}; down_arrow[i] = (color_rgb){0xff, 0xff, 0xff}; multi_arrow[i] = (color_rgb){0xff, 0xff, 0xff}; }
+    for (int i = 0; i < 40; i++) for (int j = i; j <= i + 40; j += 40) { up_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; down_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; multi_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; }
+    for (int i = 1560; i < 1600; i++) for (int j = i; j >= i - 40; j -= 40) { up_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; down_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; multi_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; }
+    for (int i = 0; i < 1560; i += 40) for (int j = i; j <= i + 1; j++) { up_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; down_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; multi_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; }
+    for (int i = 39; i < 1600; i += 40) for (int j = i; j >= i - 1; j--) { up_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; down_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; multi_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; }
+
+    for (int i = 320; i < 1280; i += 40) for (int j = i + 18; j < i + 22; j++) { up_arrow[j] = (color_rgb){0x00, 0x00, 0x00}; down_arrow[j] = (color_rgb){0x00, 0x00, 0x00}; multi_arrow[j] = (color_rgb){0x00, 0x00, 0x00}; }
+
+    for (int len = 4; len >= 0; len--) for (int i = 0; i < (5 - len) * 2; i++) {
+        up_arrow[280 + (4 - len) * 40 + i + 15 + len] = (color_rgb){0x00, 0x00, 0x00};
+        down_arrow[1120 + (len) * 40 + i + 15 + len] = (color_rgb){0x00, 0x00, 0x00};
+        multi_arrow[280 + (4 - len) * 40 + i + 15 + len] = (color_rgb){0x00, 0x00, 0x00};
+        multi_arrow[1120 + (len) * 40 + i + 15 + len] = (color_rgb){0x00, 0x00, 0x00};
+    }
+
+    //for (int i = 280; i < 480; i += 40) {} // make top arrow
 
 
 
@@ -264,7 +275,8 @@ void generate_image(Vector3 dimensions, Node *data, char *file_name) {
 
 
     for (int z = 0; z < dimensions.z; z++) for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) {
-        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = up_arrow[off_x + off_y * 40];
+        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP] && !data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN])for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = multi_arrow[off_x + off_y * 40];
+        else if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = up_arrow[off_x + off_y * 40];
         else if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = down_arrow[off_x + off_y * 40];
         else for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = (color_rgb){0xff, 0xff, 0xff};
 
