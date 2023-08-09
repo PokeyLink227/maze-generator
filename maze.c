@@ -357,7 +357,7 @@ int main(int argc, char **argv) {
 
     if (option_timed) start = clock();
 
-    Node *nodes = create_maze_basic(dimensions, 0);
+    Node *nodes = create_maze_wilson(dimensions, 0);
 
     if (option_timed) {
         stop = clock();
