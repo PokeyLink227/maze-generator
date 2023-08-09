@@ -1,1 +1,1 @@
-gcc -Wall maze.c bmp.c -omaze
+@gcc -Wall maze.c bmp.c -omaze
