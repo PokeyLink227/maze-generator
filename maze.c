@@ -97,7 +97,6 @@ Node *create_maze_basic(Vector3 dimensions, Vector3 *exclusions) {
     for (int i = 0; i < num_nodes; i++) nodes[i] = (Node){0, 0, {1, 1, 1, 1, 1, 1}, -1};
 
     box bounding_box = (box){(Vector3){0, 0, 0}, dimensions};
-
     Vector3 directions_v[6] = {
         {0, -1, 0},
         {1, 0, 0},
@@ -108,9 +107,7 @@ Node *create_maze_basic(Vector3 dimensions, Vector3 *exclusions) {
     };
 
     // in order to add rooms, set nodes to visited and increment starting num_visited value. to save memory you can also create a smaller stack and decrement num_nodes
-
     V3Stack *visited = create_stack(num_nodes);
-
     int num_visited = 0;
     Vector3 pos = {0, 0, 0};
     byte dirs[6];
@@ -118,14 +115,12 @@ Node *create_maze_basic(Vector3 dimensions, Vector3 *exclusions) {
 
     while (num_visited < num_nodes) {
         //mark current node as visited
-
         if (nodes[pos_in_array(pos, dimensions)].visited == 0) {
             num_visited++;
             nodes[pos_in_array(pos, dimensions)].visited = 1;
             Push(visited, pos);
         }
 
-        // find next node to travel to
         // get list of all nodes that can be traveled to and pick a random one
         num_dirs = 0;
         for (byte i = 0; i < 6; i++) if (contains(bounding_box, vecadd(pos, directions_v[i])) && !nodes[pos_in_array(vecadd(pos, directions_v[i]), dimensions)].visited) dirs[num_dirs++] = i;
@@ -134,7 +129,6 @@ Node *create_maze_basic(Vector3 dimensions, Vector3 *exclusions) {
             selected_dir = dirs[rand() % num_dirs];
 
             // set walls to 0 bewteen 2 nodes
-            //printf("connecting %c from (%i, %i, %i) to (%i, %i, %i)\n", c[selected_dir], pos.x, pos.y, pos.z, vecadd(pos, directions_v[selected_dir]).x, vecadd(pos, directions_v[selected_dir]).y, vecadd(pos, directions_v[selected_dir]).z);
             nodes[pos_in_array(pos, dimensions)].walls[selected_dir] = 0;
             pos = vecadd(pos, directions_v[selected_dir]);
             nodes[pos_in_array(pos, dimensions)].walls[(selected_dir + 3) % 6] = 0;
@@ -142,7 +136,6 @@ Node *create_maze_basic(Vector3 dimensions, Vector3 *exclusions) {
         else {
             Pop(visited);
             pos = Peek(visited);
-            //printf("backtracking to (%i, %i, %i)\n", pos.x, pos.y, pos.z);
         }
     }
     return nodes;
@@ -181,12 +174,10 @@ Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
 
     byte dirs[6];
     byte num_dirs, selected_dir;
-
     Vector3 current_node;
 
     while (open_len > 0) {
         // select an unvisited node
-
         do {
             n = rand() % open_len;
             current_node = open[n];
@@ -218,7 +209,6 @@ Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
                 current_node = vecadd(current_node, directions_v[selected_dir]);
                 current_node_index = next_node_index;
             }
-
             if (nodes[next_node_index].visited == INMAZE) break;
         }
 
@@ -263,16 +253,10 @@ void generate_image(Vector3 dimensions, Node *data, char *file_name) {
         multi_arrow[1120 + (len) * 40 + i + 15 + len] = (color_rgb){0x00, 0x00, 0x00};
     }
 
-    //for (int i = 280; i < 480; i += 40) {} // make top arrow
-
-
-
-
     Vector3 image_dimensions = (Vector3){(dimensions.x * cell_width + wall_width), (dimensions.y * cell_width + wall_width), (dimensions.x * cell_width + wall_width) * dimensions.z};
     color_rgb *pixels = (color_rgb *)malloc(sizeof(color_rgb) * image_dimensions.z * image_dimensions.y);
 
     for (int i = 0; i < image_dimensions.z * image_dimensions.y; i++) pixels[i] = (color_rgb){0x00, 0x00, 0x00};
-
 
     for (int z = 0; z < dimensions.z; z++) for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) {
         if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP] && !data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN])for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = multi_arrow[off_x + off_y * 40];
