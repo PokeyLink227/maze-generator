@@ -276,6 +276,20 @@ void generate_image(Vector3 dimensions, Node *data, char *file_name) {
 
 }
 
+int matchcmd(char *str, char **cmds, int len) {
+    char matched;
+    for (int i = 0; i < len; i++) {
+        matched = 1;
+        for (int c = 0; str[c] || cmds[i][c]; c++) {
+            if (cmds[i][c] == '#' && ((str[c] >= '0' && str[c] <= '9') || !str[c])) return i;
+            if (cmds[i][c] == '*') return i;
+            if (str[c] != cmds[i][c]) { matched = 0; break; }
+        }
+        if (matched) return i;
+    }
+    return -1;
+}
+
 int main(int argc, char **argv) {
 
     byte option_timed = 0;
@@ -283,12 +297,70 @@ int main(int argc, char **argv) {
     char *output_file_name = "out.bmp";
     time_t rand_seed = time(0);
 
+    char *commands[5] = {
+        "h",
+        "d",
+        "t",
+        "s#",
+        "o*"
+    };
+
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-' && argv[i][1] != 0 && argv[i][2] == 0) { // argument is valid flag - [char] \0
+        if (argv[i][0] == '-') switch (matchcmd(argv[i] + 1, commands, 5)) {
+            case 0:
+                printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -h                Shows this page\n  -d [x] [y] {z}    Set custom dimensions for maze\n  -t                Enable timer during maze generation\n  -s [number]       Set the rng seed\n  -o [name]         Set output file name\n  -f [format]       Set output image format\n  -m [name]         Set method for maze generation");
+                break;
+            case 1:
+                if (i + 2 < argc && (argv[i + 1][0] >= '0' && argv[i + 1][0] <= '9') && (argv[i + 2][0] >= '0' && argv[i + 2][0] <= '9')) { // two more arguments that are also numbers exist
+                    dimensions.x = atoi(argv[i + 1]);
+                    dimensions.y = atoi(argv[i + 2]);
+                    i += 2;
+                    if (i + 1 < argc && (argv[i + 1][0] >= '0' && argv[i + 1][0] <= '9')) dimensions.z = atoi(argv[++i]);
+                } else {
+                    printf("Error: Flag -d requires 2-3 integers\n");
+                    return 1;
+                }
+                break;
+            case 2:
+                option_timed = 1;
+                break;
+            case 3:
+                if (argv[i][2]) rand_seed = atoi(argv[i] + 2);
+                else if (i + 1 < argc) rand_seed = atoi(argv[++i]);
+                else {
+                    printf("Error: flag -s requires an integer\n");
+                    return 1;
+                }
+                break;
+            case 4:
+                if (argv[i][2]) output_file_name = argv[i] + 2;
+                else if (i + 1 < argc) output_file_name = argv[++i];
+                else {
+                    printf("Error: flag -o requires a file name\n");
+                    return 1;
+                }
+                break;
+            default:
+                printf("Error: unknown flag %s, use -h for help\n", argv[i]);
+        }
+    }
+
+    if (!dimensions.x || !dimensions.y || !dimensions.z) {
+        printf("Error: Invalid maze dimensions\n");
+        return 1;
+    }
+
+
+    /*
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-' && argv[i][1]) { // argument is valid flag - [char]
             switch (argv[i][1]) {
                 case 'h':
-                    printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -h                Shows this page\n  -d [x] [y] {z}    Set custom dimensions for maze\n  -t                Enable timer during maze generation\n  -s [number]       Set the rng seed\n  -o [name]         Set output file name\n  -f [format]       Set output image format\n  -m [name]         Set method for maze generation");
-                    return 0;
+                    if (argv[i][2]) printf("Unknown flag %s. use -h for help\n", argv[i]);
+                    else {
+                        printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -h                Shows this page\n  -d [x] [y] {z}    Set custom dimensions for maze\n  -t                Enable timer during maze generation\n  -s [number]       Set the rng seed\n  -o [name]         Set output file name\n  -f [format]       Set output image format\n  -m [name]         Set method for maze generation");
+                        return 0;
+                    }
                     break;
                 case 'd': // set dimensions
                     if (i + 2 < argc && (argv[i + 1][0] >= '0' && argv[i + 1][0] <= '9') && (argv[i + 2][0] >= '0' && argv[i + 2][0] <= '9')) { // two more arguments that are also numbers exist
@@ -302,13 +374,14 @@ int main(int argc, char **argv) {
                     }
                     break;
                 case 't': // enable timer
-                    option_timed = 1;
+                    if (argv[i][2]) printf("Unknown flag %s. use -h for help\n", argv[i]);
+                    else option_timed = 1;
                     break;
                 case 's':
                     if (i + 1 < argc) {
                         rand_seed = atoi(argv[++i]);
                     } else {
-                        printf("Missing seed\n");
+                        printf("Error: flag -s requires an integer\n");
                         return 1;
                     }
                     break;
@@ -316,24 +389,25 @@ int main(int argc, char **argv) {
                     if (i + 1 < argc) {
                         output_file_name = argv[++i];
                     } else {
-                        printf("Missing output file name\n");
+                        printf("Error: flag -o requires a file name\n");
                         return 1;
                     }
                     break;
                 case 'f': // set image format
                 // add options for setting fg bg color and changing cell width
                 default:
-                    printf("Unknown flag %c. use -h for help\n", argv[i][1]);
+                    printf("Error: unknown flag %s, use -h for help\n", argv[i]);
             }
         } else {
             printf("invalid flag %s\n", argv[i]);
             return 1;
         }
     }
+    */
 
 
-    if (dimensions.z == 1) printf("Generating 2D maze of size {x: %i, y: %i}\n", dimensions.x, dimensions.y);
-    else printf("Generating 3D maze of size {x: %i, y: %i, z: %i}.  Warning 3D mazes not fully supported yet\n", dimensions.x, dimensions.y, dimensions.z);
+    if (dimensions.z == 1) printf("Generating 2D maze of size {x: %i, y: %i} with seed: %li\n", dimensions.x, dimensions.y, rand_seed);
+    else printf("Generating 3D maze of size {x: %i, y: %i, z: %i} with seed: %li.  Warning 3D mazes not fully supported yet\n", dimensions.x, dimensions.y, dimensions.z, rand_seed);
 
     srand(rand_seed);
 
