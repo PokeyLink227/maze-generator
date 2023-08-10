@@ -297,20 +297,26 @@ int main(int argc, char **argv) {
     char *output_file_name = "out.bmp";
     time_t rand_seed = time(0);
 
-    char *commands[5] = {
+    char *commands[9] = {
         "h",
+        "help",
         "d",
+        "dim",
         "t",
+        "timer",
         "s#",
+        "seed#",
         "o*"
     };
 
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') switch (matchcmd(argv[i] + 1, commands, 5)) {
             case 0:
+            case 1:
                 printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -h                Shows this page\n  -d [x] [y] {z}    Set custom dimensions for maze\n  -t                Enable timer during maze generation\n  -s [number]       Set the rng seed\n  -o [name]         Set output file name\n  -f [format]       Set output image format\n  -m [name]         Set method for maze generation");
                 break;
-            case 1:
+            case 2:
+            case 3:
                 if (i + 2 < argc && (argv[i + 1][0] >= '0' && argv[i + 1][0] <= '9') && (argv[i + 2][0] >= '0' && argv[i + 2][0] <= '9')) { // two more arguments that are also numbers exist
                     dimensions.x = atoi(argv[i + 1]);
                     dimensions.y = atoi(argv[i + 2]);
@@ -321,10 +327,12 @@ int main(int argc, char **argv) {
                     return 1;
                 }
                 break;
-            case 2:
+            case 4:
+            case 5:
                 option_timed = 1;
                 break;
-            case 3:
+            case 6:
+            case 7:
                 if (argv[i][2]) rand_seed = atoi(argv[i] + 2);
                 else if (i + 1 < argc) rand_seed = atoi(argv[++i]);
                 else {
@@ -332,7 +340,7 @@ int main(int argc, char **argv) {
                     return 1;
                 }
                 break;
-            case 4:
+            case 8:
                 if (argv[i][2]) output_file_name = argv[i] + 2;
                 else if (i + 1 < argc) output_file_name = argv[++i];
                 else {
