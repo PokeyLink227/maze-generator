@@ -310,7 +310,7 @@ int main(int argc, char **argv) {
     };
 
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-') switch (matchcmd(argv[i] + 1, commands, 5)) {
+        if (argv[i][0] == '-') switch (matchcmd(argv[i] + 1, commands, 9)) {
             case 0:
             case 1:
                 printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -h                Shows this page\n  -d [x] [y] {z}    Set custom dimensions for maze\n  -t                Enable timer during maze generation\n  -s [number]       Set the rng seed\n  -o [name]         Set output file name\n  -f [format]       Set output image format\n  -m [name]         Set method for maze generation");
@@ -332,11 +332,18 @@ int main(int argc, char **argv) {
                 option_timed = 1;
                 break;
             case 6:
-            case 7:
                 if (argv[i][2]) rand_seed = atoi(argv[i] + 2);
                 else if (i + 1 < argc) rand_seed = atoi(argv[++i]);
                 else {
                     printf("Error: flag -s requires an integer\n");
+                    return 1;
+                }
+                break;
+            case 7:
+                if (argv[i][5]) rand_seed = atoi(argv[i] + 5);
+                else if (i + 1 < argc) rand_seed = atoi(argv[++i]);
+                else {
+                    printf("Error: flag -seed requires an integer\n");
                     return 1;
                 }
                 break;
