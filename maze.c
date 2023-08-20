@@ -365,7 +365,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-
+    if (argc == 1) printf("No options provided, using defaults. Use -h to see help menu\n");
     if (dimensions.z == 1) printf("Generating 2D maze of size {x: %i, y: %i} with seed: %li\n", dimensions.x, dimensions.y, rand_seed);
     else printf("Generating 3D maze of size {x: %i, y: %i, z: %i} with seed: %li.  Warning 3D mazes not fully supported yet\n", dimensions.x, dimensions.y, dimensions.z, rand_seed);
 
