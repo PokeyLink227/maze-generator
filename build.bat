@@ -1,1 +1,1 @@
-@gcc -Wall -Wextra maze.c bmp.c -omaze
+@gcc -Wall -Wextra -pedantic-errors maze.c bmp.c -omaze
