@@ -44,31 +44,37 @@ byte *generate_pixel_array(byte *header, color_rgb *pixels) {
 }
 
 void export_image(byte *header, byte *pixel_array, char *file_name) {
-    FILE *fp;
-    fp = fopen(file_name, "wb");
+    FILE *fp = fopen(file_name, "wb");
     fwrite(header, 1, 54, fp);
     fwrite(pixel_array, 1, *((int *)(header + 34)), fp);
     fclose(fp);
     return;
 }
 
-/*
-int main() {
-    color_rgb pixels[25] = {
-        {0xff, 0x00, 0x00}, {0x00, 0xff, 0x00}, {0x00, 0x00, 0xff}, {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff},
-        {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff},
-        {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff},
-        {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff},
-        {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff}, {0xff, 0xff, 0xff},
-    };
+bmp_image load_image(char *file_name) {
+    bmp_image img = (bmp_image){0, 0, 0};
+    FILE *fp = fopen(file_name, "rb");
+    byte *header = malloc(54);
 
-    byte *header, *pixel_array;
+    if (fread(header, 1, 54, fp) != 54) return img;
+    if (header[0] != 'B' || header[1] != 'M') return img;
+    img.width = *((int *)(header + 18));
+    img.height = *((int *)(header + 22));
 
-    header = generate_header(5, 5);
-    pixel_array = generate_pixel_array(header, pixels);
-    export_image(header, pixel_array);
-
-    free(header);
-    free(pixel_array);
+    byte *pixeldata = malloc(*((int *)(header + 34)));
+    if (fread(pixeldata, 1, *((int *)(header + 34)), fp) != *((int *)(header + 34))) return img;
+    img.pixels = malloc(sizeof(color_rgb) * img.width * img.height);
+    int padding = img.width * 3 % 4 == 0 ? 0 : 4 - img.width * 3 % 4;
+    int p = 0;
+    for (int h = img.height - 1; h >= 0; h--) {
+        for (int w = 0; w < img.width; w++) {
+            // might be faster to use p, p + 1, p + 2 then increment p because of cpu mem blocking
+            img.pixels[h * img.width + w].blue = pixeldata[p++];
+            img.pixels[h * img.width + w].green = pixeldata[p++];
+            img.pixels[h * img.width + w].red = pixeldata[p++];
+        }
+        p += padding;
+    }
+    fclose(fp);
+    return img;
 }
-*/
