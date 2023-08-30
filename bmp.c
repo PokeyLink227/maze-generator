@@ -1,6 +1,5 @@
 #include "bmp.h"
 
-
 byte *generate_header(int width, int height) {
     byte *header = (byte *)malloc(54);
     for (int i = 0; i < 54; i++) header[i] = 0x00;
@@ -62,16 +61,17 @@ bmp_image load_image(char *file_name) {
     img.height = *((int *)(header + 22));
 
     byte *pixeldata = malloc(*((int *)(header + 34)));
-    if (fread(pixeldata, 1, *((int *)(header + 34)), fp) != *((int *)(header + 34))) return img;
+    if (fread(pixeldata, 1, *((int *)(header + 34)), fp) != *((unsigned int *)(header + 34))) return img;
     img.pixels = malloc(sizeof(color_rgb) * img.width * img.height);
     int padding = img.width * 3 % 4 == 0 ? 0 : 4 - img.width * 3 % 4;
     int p = 0;
     for (int h = img.height - 1; h >= 0; h--) {
         for (int w = 0; w < img.width; w++) {
-            // might be faster to use p, p + 1, p + 2 then increment p because of cpu mem blocking
-            img.pixels[h * img.width + w].blue = pixeldata[p++];
-            img.pixels[h * img.width + w].green = pixeldata[p++];
-            img.pixels[h * img.width + w].red = pixeldata[p++];
+            // might be faster to use p, p + 1, p + 2 then increment p because of cpu mem blocking NOTE: it is faster :D
+            img.pixels[h * img.width + w].blue = pixeldata[p];
+            img.pixels[h * img.width + w].green = pixeldata[p + 1];
+            img.pixels[h * img.width + w].red = pixeldata[p + 2];
+            p += 3;
         }
         p += padding;
     }
