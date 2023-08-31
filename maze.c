@@ -37,6 +37,12 @@ typedef struct box {
     Vector3 position, dimensions;
 } box;
 
+typedef struct image_options {
+    color_rgb fgcolor, bgcolor;
+    char *output_file;
+    int wall_width, passage_width;
+} image_options;
+
 Vector3 vecadd(Vector3 lhs, Vector3 rhs) {
     return (Vector3){lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z};
 }
@@ -143,6 +149,7 @@ Node *create_maze_basic(Vector3 dimensions, Vector3 *exclusions) {
             pos = Peek(visited);
         }
     }
+    free_stack(visited);
     return nodes;
 }
 
@@ -240,12 +247,12 @@ Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
     return nodes;
 }
 
-void generate_image(Vector3 dimensions, Node *data, char *file_name) {
-    int passage_width = 40, wall_width = 10;
-    int cell_width = passage_width + wall_width;
+void generate_image(Vector3 dimensions, Node *data, image_options opt) {
+    //int passage_width = 40, wall_width = 10;
+    int cell_width = opt.passage_width + opt.wall_width;
 
     color_rgb up_arrow[1600], down_arrow[1600], multi_arrow[1600];
-    for (int i = 0; i < 1600; i++) { up_arrow[i] = (color_rgb){0xff, 0xff, 0xff}; down_arrow[i] = (color_rgb){0xff, 0xff, 0xff}; multi_arrow[i] = (color_rgb){0xff, 0xff, 0xff}; }
+    for (int i = 0; i < 1600; i++) { up_arrow[i] = opt.fgcolor; down_arrow[i] = opt.fgcolor; multi_arrow[i] = opt.fgcolor; }
     for (int i = 0; i < 40; i++) for (int j = i; j <= i + 40; j += 40) { up_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; down_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; multi_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; }
     for (int i = 1560; i < 1600; i++) for (int j = i; j >= i - 40; j -= 40) { up_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; down_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; multi_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; }
     for (int i = 0; i < 1560; i += 40) for (int j = i; j <= i + 1; j++) { up_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; down_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; multi_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; }
@@ -260,22 +267,22 @@ void generate_image(Vector3 dimensions, Node *data, char *file_name) {
         multi_arrow[1120 + (len) * 40 + i + 15 + len] = (color_rgb){0x00, 0x00, 0x00};
     }
 
-    Vector3 image_dimensions = (Vector3){(dimensions.x * cell_width + wall_width), (dimensions.y * cell_width + wall_width), (dimensions.x * cell_width + wall_width) * dimensions.z};
+    Vector3 image_dimensions = (Vector3){(dimensions.x * cell_width + opt.wall_width), (dimensions.y * cell_width + opt.wall_width), (dimensions.x * cell_width + opt.wall_width) * dimensions.z};
     color_rgb *pixels = (color_rgb *)malloc(sizeof(color_rgb) * image_dimensions.z * image_dimensions.y);
 
     for (int i = 0; i < image_dimensions.z * image_dimensions.y; i++) pixels[i] = (color_rgb){0x00, 0x00, 0x00};
 
     for (int z = 0; z < dimensions.z; z++) for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) {
-        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP] && !data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN])for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = multi_arrow[off_x + off_y * 40];
-        else if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = up_arrow[off_x + off_y * 40];
-        else if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = down_arrow[off_x + off_y * 40];
-        else for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = (color_rgb){0xff, 0xff, 0xff};
+        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP] && !data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN])for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = multi_arrow[off_x + off_y * 40];
+        else if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP]) for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = up_arrow[off_x + off_y * 40];
+        else if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN]) for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = down_arrow[off_x + off_y * 40];
+        else for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = opt.fgcolor;
 
-        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[SOUTH]) for (int off_y = 0; off_y < wall_width; off_y++) for (int off_x = 0; off_x < passage_width; off_x++) pixels[((y + 1) * cell_width + off_y) * (image_dimensions.z) + (x * cell_width + wall_width + off_x) + (z * image_dimensions.x)] = (color_rgb){0xff, 0xff, 0xff};
-        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[EAST]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < wall_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + ((x + 1) * cell_width + off_x) + (z * image_dimensions.x)] = (color_rgb){0xff, 0xff, 0xff};
+        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[SOUTH]) for (int off_y = 0; off_y < opt.wall_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[((y + 1) * cell_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = opt.fgcolor;
+        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[EAST]) for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.wall_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + ((x + 1) * cell_width + off_x) + (z * image_dimensions.x)] = opt.fgcolor;
     }
 
-    save_image((bmp_image){image_dimensions.z, image_dimensions.y, pixels}, file_name);
+    save_image((bmp_image){image_dimensions.z, image_dimensions.y, pixels}, opt.output_file);
     free(pixels);
 }
 
@@ -297,10 +304,16 @@ int main(int argc, char **argv) {
 
     byte option_timed = 0;
     Vector3 dimensions = {10, 10, 1};
-    char *output_file_name = "out.bmp";
     time_t rand_seed = time(0);
+    image_options opt = {
+        (color_rgb){0xff, 0xff, 0xff},
+        (color_rgb){0x00, 0x00, 0x00},
+        "out.bmp",
+        1,
+        40
+    };
 
-    char *commands[9] = {
+    char *commands[17] = {
         "h",
         "help",
         "d",
@@ -309,11 +322,19 @@ int main(int argc, char **argv) {
         "timer",
         "s#",
         "seed#",
-        "o*"
+        "o*",
+        "fgcolor#",
+        "fg#",
+        "bgcolor#",
+        "bg#",
+        "wallwidth#",
+        "ww#",
+        "passagewidth#",
+        "pw#"
     };
 
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-') switch (matchcmd(argv[i] + 1, commands, 9)) {
+        if (argv[i][0] == '-') switch (matchcmd(argv[i] + 1, commands, 17)) {
             case 0:
             case 1:
                 printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -h                Shows this page\n  -d [x] [y] {z}    Set custom dimensions for maze\n  -t                Enable timer during maze generation\n  -s [number]       Set the rng seed\n  -o [name]         Set output file name\n  -f [format]       Set output image format\n  -m [name]         Set method for maze generation");
@@ -351,10 +372,66 @@ int main(int argc, char **argv) {
                 }
                 break;
             case 8:
-                if (argv[i][2]) output_file_name = argv[i] + 2;
-                else if (i + 1 < argc) output_file_name = argv[++i];
+                if (argv[i][2]) opt.output_file = argv[i] + 2;
+                else if (i + 1 < argc) opt.output_file = argv[++i];
                 else {
                     printf("Error: flag -o requires a file name\n");
+                    return 1;
+                }
+                break;
+            case 9:
+            case 10:
+                if (i + 3 < argc) {
+                    opt.fgcolor.red = atoi(argv[i + 1]);
+                    opt.fgcolor.green = atoi(argv[i + 2]);
+                    opt.fgcolor.blue = atoi(argv[i + 3]);
+                    i += 3;
+                } else {
+                    printf("Error: flag -fg requires 3 integers\n");
+                    return 1;
+                }
+                break;
+            case 11:
+            case 12:
+                if (i + 3 < argc) {
+                    opt.bgcolor.red = atoi(argv[i + 1]);
+                    opt.bgcolor.green = atoi(argv[i + 2]);
+                    opt.bgcolor.blue = atoi(argv[i + 3]);
+                    i += 3;
+                } else {
+                    printf("Error: flag -bg requires 3 integers\n");
+                    return 1;
+                }
+                break;
+            case 13:
+                if (i + 1 < argc) {
+                    opt.wall_width = atoi(argv[i + 1]);
+                } else {
+                    printf("Error: flag -wallwidth requires an integer\n");
+                    return 1;
+                }
+                break;
+            case 14:
+                if (argv[i][2]) opt.wall_width = atoi(argv[i] + 2);
+                else if (i + 1 < argc) opt.wall_width = atoi(argv[i + 1]);
+                else {
+                    printf("Error: flag -ww requires an integer\n");
+                    return 1;
+                }
+                break;
+            case 15:
+                if (argv[i][2]) opt.passage_width = atoi(argv[i] + 2);
+                else if (i + 1 < argc) opt.passage_width = atoi(argv[i + 1]);
+                else {
+                    printf("Error: flag -pw requires an integer\n");
+                    return 1;
+                }
+                break;
+            case 16:
+                if (i + 1 < argc) {
+                    opt.passage_width = atoi(argv[i + 1]);
+                } else {
+                    printf("Error: flag -pw requires an integer\n");
                     return 1;
                 }
                 break;
@@ -385,7 +462,7 @@ int main(int argc, char **argv) {
         printf("time: %ld\n", stop - start);
     }
 
-    generate_image(dimensions, nodes, output_file_name);
+    generate_image(dimensions, nodes, opt);
 
     //for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i].visited ? "visited" : "not visited"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'));
 
