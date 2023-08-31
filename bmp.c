@@ -73,14 +73,16 @@ byte save_image(bmp_image img, char *file_name) {
     int pos = 54;
     for (int h = img.height - 1; h >= 0; h--) {
         for (int w = 0; w < img.width; w++) {
-            img_raw[pos++] = img.pixels[h * img.width + w].blue;
-            img_raw[pos++] = img.pixels[h * img.width + w].green;
-            img_raw[pos++] = img.pixels[h * img.width + w].red;
+            img_raw[pos] = img.pixels[h * img.width + w].blue;
+            img_raw[pos + 1] = img.pixels[h * img.width + w].green;
+            img_raw[pos + 2] = img.pixels[h * img.width + w].red;
+            pos += 3;
         }
         for (int i = 0; i < padding; i++) img_raw[pos++] = 0x00;
     }
+
     FILE *fp = fopen(file_name, "wb");
-    fwrite(img_raw, 1, *((int *)(img_raw + 34)), fp);
+    fwrite(img_raw, 1, *((int *)(img_raw + 2)), fp);
     fclose(fp);
     free(img_raw);
     return 1;
@@ -99,21 +101,20 @@ bmp_image load_image(char *file_name) {
     byte *pixeldata = malloc(*((int *)(header + 34)));
     if (fread(pixeldata, 1, *((int *)(header + 34)), fp) != *((unsigned int *)(header + 34))) return img;
     fclose(fp);
-
     free(header);
 
     img.pixels = malloc(sizeof(color_rgb) * img.width * img.height);
     int padding = img.width * 3 % 4 == 0 ? 0 : 4 - img.width * 3 % 4;
-    int p = 0;
+    int pos = 0;
     for (int h = img.height - 1; h >= 0; h--) {
         for (int w = 0; w < img.width; w++) {
             // might be faster to use p, p + 1, p + 2 then increment p because of cpu mem blocking NOTE: it is faster :D
-            img.pixels[h * img.width + w].blue = pixeldata[p];
-            img.pixels[h * img.width + w].green = pixeldata[p + 1];
-            img.pixels[h * img.width + w].red = pixeldata[p + 2];
-            p += 3;
+            img.pixels[h * img.width + w].blue = pixeldata[pos];
+            img.pixels[h * img.width + w].green = pixeldata[pos + 1];
+            img.pixels[h * img.width + w].red = pixeldata[pos + 2];
+            pos += 3;
         }
-        p += padding;
+        pos += padding;
     }
     return img;
 }
