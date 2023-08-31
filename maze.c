@@ -258,19 +258,19 @@ void generate_image(Vector3 dimensions, Node *data, image_options opt) {
     for (int i = 0; i < 1560; i += 40) for (int j = i; j <= i + 1; j++) { up_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; down_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; multi_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; }
     for (int i = 39; i < 1600; i += 40) for (int j = i; j >= i - 1; j--) { up_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; down_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; multi_arrow[j] = (color_rgb){0x80, 0x80, 0x80}; }
 
-    for (int i = 320; i < 1280; i += 40) for (int j = i + 18; j < i + 22; j++) { up_arrow[j] = (color_rgb){0x00, 0x00, 0x00}; down_arrow[j] = (color_rgb){0x00, 0x00, 0x00}; multi_arrow[j] = (color_rgb){0x00, 0x00, 0x00}; }
+    for (int i = 320; i < 1280; i += 40) for (int j = i + 18; j < i + 22; j++) { up_arrow[j] = opt.bgcolor; down_arrow[j] = opt.bgcolor; multi_arrow[j] = opt.bgcolor; }
 
     for (int len = 4; len >= 0; len--) for (int i = 0; i < (5 - len) * 2; i++) {
-        up_arrow[280 + (4 - len) * 40 + i + 15 + len] = (color_rgb){0x00, 0x00, 0x00};
-        down_arrow[1120 + (len) * 40 + i + 15 + len] = (color_rgb){0x00, 0x00, 0x00};
-        multi_arrow[280 + (4 - len) * 40 + i + 15 + len] = (color_rgb){0x00, 0x00, 0x00};
-        multi_arrow[1120 + (len) * 40 + i + 15 + len] = (color_rgb){0x00, 0x00, 0x00};
+        up_arrow[280 + (4 - len) * 40 + i + 15 + len] = opt.bgcolor;
+        down_arrow[1120 + (len) * 40 + i + 15 + len] = opt.bgcolor;
+        multi_arrow[280 + (4 - len) * 40 + i + 15 + len] = opt.bgcolor;
+        multi_arrow[1120 + (len) * 40 + i + 15 + len] = opt.bgcolor;
     }
 
     Vector3 image_dimensions = (Vector3){(dimensions.x * cell_width + opt.wall_width), (dimensions.y * cell_width + opt.wall_width), (dimensions.x * cell_width + opt.wall_width) * dimensions.z};
     color_rgb *pixels = (color_rgb *)malloc(sizeof(color_rgb) * image_dimensions.z * image_dimensions.y);
 
-    for (int i = 0; i < image_dimensions.z * image_dimensions.y; i++) pixels[i] = (color_rgb){0x00, 0x00, 0x00};
+    for (int i = 0; i < image_dimensions.z * image_dimensions.y; i++) pixels[i] = opt.bgcolor;
 
     for (int z = 0; z < dimensions.z; z++) for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) {
         if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP] && !data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN])for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = multi_arrow[off_x + off_y * 40];
@@ -309,7 +309,7 @@ int main(int argc, char **argv) {
         (color_rgb){0xff, 0xff, 0xff},
         (color_rgb){0x00, 0x00, 0x00},
         "out.bmp",
-        1,
+        10,
         40
     };
 
@@ -412,7 +412,7 @@ int main(int argc, char **argv) {
                 }
                 break;
             case 14:
-                if (argv[i][2]) opt.wall_width = atoi(argv[i] + 2);
+                if (argv[i][3]) opt.wall_width = atoi(argv[i] + 3);
                 else if (i + 1 < argc) opt.wall_width = atoi(argv[i + 1]);
                 else {
                     printf("Error: flag -ww requires an integer\n");
@@ -420,17 +420,17 @@ int main(int argc, char **argv) {
                 }
                 break;
             case 15:
-                if (argv[i][2]) opt.passage_width = atoi(argv[i] + 2);
-                else if (i + 1 < argc) opt.passage_width = atoi(argv[i + 1]);
-                else {
+                if (i + 1 < argc) {
+                    opt.passage_width = atoi(argv[i + 1]);
+                } else {
                     printf("Error: flag -pw requires an integer\n");
                     return 1;
                 }
                 break;
             case 16:
-                if (i + 1 < argc) {
-                    opt.passage_width = atoi(argv[i + 1]);
-                } else {
+                if (argv[i][3]) opt.passage_width = atoi(argv[i] + 3);
+                else if (i + 1 < argc) opt.passage_width = atoi(argv[i + 1]);
+                else {
                     printf("Error: flag -pw requires an integer\n");
                     return 1;
                 }
