@@ -47,7 +47,7 @@ Vector3 vecsub(Vector3 lhs, Vector3 rhs) {
 
 typedef struct V3Stack {
     int max_size, top_element;
-    Vector3 elements[];
+    Vector3 *elements;
 } V3Stack;
 
 V3Stack *create_stack(int size) {
@@ -55,6 +55,11 @@ V3Stack *create_stack(int size) {
     s->max_size = size;
     s->top_element = -1;
     return s;
+}
+
+void free_stack(V3Stack *s) {
+    free(s);
+    return;
 }
 
 byte Push(V3Stack *s, Vector3 data) {
@@ -230,6 +235,8 @@ Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
             open_pos[pos_in_array(open[open_len], dimensions)] = open_pos[current_node_index];
         }
     }
+    free(open);
+    free(open_pos);
     return nodes;
 }
 
@@ -268,12 +275,8 @@ void generate_image(Vector3 dimensions, Node *data, char *file_name) {
         if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[EAST]) for (int off_y = 0; off_y < passage_width; off_y++) for (int off_x = 0; off_x < wall_width; off_x++) pixels[(y * cell_width + wall_width + off_y) * (image_dimensions.z) + ((x + 1) * cell_width + off_x) + (z * image_dimensions.x)] = (color_rgb){0xff, 0xff, 0xff};
     }
 
-    byte *header, *pixel_array;
-
-    header = generate_header(image_dimensions.z, image_dimensions.y);
-    pixel_array = generate_pixel_array(header, pixels);
-    export_image(header, pixel_array, file_name);
-
+    save_image((bmp_image){image_dimensions.z, image_dimensions.y, pixels}, file_name);
+    free(pixels);
 }
 
 int matchcmd(char *str, char **cmds, int len) {
