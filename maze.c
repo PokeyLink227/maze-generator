@@ -21,8 +21,7 @@ enum status {
 typedef unsigned char byte;
 
 typedef struct Node {
-    byte visited, parent_dir, walls[6];
-    int parent;
+    byte visited, next_dir, walls[6];
 } Node;
 
 typedef struct Vector3 {
@@ -43,129 +42,56 @@ typedef struct image_options {
     int wall_width, passage_width;
 } image_options;
 
-Vector3 vecadd(Vector3 lhs, Vector3 rhs) {
-    return (Vector3){lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z};
-}
+typedef struct Stack {
+    int max_size, top_element, *elements;
+} Stack;
 
-Vector3 vecsub(Vector3 lhs, Vector3 rhs) {
-    return (Vector3){lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z};
-}
-
-typedef struct V3Stack {
-    int max_size, top_element;
-    Vector3 *elements;
-} V3Stack;
-
-char create_stack(V3Stack *s, int size) {
-    s->elements = (Vector3 *)malloc(sizeof(Vector3) * size);
+byte create_stack(Stack *s, int size) {
+    s->elements = (int *)malloc(sizeof(int) * size);
     s->max_size = size;
     s->top_element = -1;
-    return 1;
+    return s->elements != 0;
 }
 
-void free_stack(V3Stack *s) {
+void free_stack(Stack *s) {
     free(s->elements);
     return;
 }
 
-byte Push(V3Stack *s, Vector3 data) {
+byte push(Stack *s, int val) {
     if (s->top_element == s->max_size - 1) return 0;
-    s->elements[++s->top_element] = data;
+    s->elements[++s->top_element] = val;
     return 1;
 }
 
-Vector3 Pop(V3Stack *s) {
-    if (s->top_element == -1) return (Vector3){0, 0, 0};
+int pop(Stack *s) {
+    if (s->top_element == -1) return 0;
     return s->elements[s->top_element--];
 }
 
-Vector3 Peek(V3Stack *s) {
-    if (s->top_element == -1) return (Vector3){0, 0, 0};
+int peek(Stack *s) {
+    if (s->top_element == -1) return 0;
     return s->elements[s->top_element];
 }
 
-byte is_empty(V3Stack *s) {
+byte is_empty(Stack *s) {
     return s->top_element == 0;
 }
-
-int pos_in_array(Vector3 pos, Vector3 dimensions) {
-    return (pos.x + pos.y * dimensions.x + pos.z * dimensions.x * dimensions.y);
-}
-
-byte contains(box box, Vector3 point) {
-    if (
-        point.x >= box.dimensions.x || point.x < box.position.x ||
-        point.y >= box.dimensions.y || point.y < box.position.y ||
-        point.z >= box.dimensions.z || point.z < box.position.z
-    ) return 0;
-    return 1;
-}
-
-Node *create_maze_basic(Vector3 dimensions) {
-    int num_nodes = dimensions.x * dimensions.y * dimensions.z;
-    Node *nodes = (Node *)malloc(sizeof(Node) * num_nodes);
-    // set visited to 0 and all walls to active (1)
-    for (int i = 0; i < num_nodes; i++) nodes[i] = (Node){0, 0, {1, 1, 1, 1, 1, 1}, -1};
-
-    box bounding_box = (box){(Vector3){0, 0, 0}, dimensions};
-    Vector3 directions_v[6] = {
-        {0, -1, 0},
-        {1, 0, 0},
-        {0, 0, 1},
-        {0, 1, 0},
-        {-1, 0, 0},
-        {0, 0, -1},
-    };
-
-    // in order to add rooms, set nodes to visited and increment starting num_visited value. to save memory you can also create a smaller stack and decrement num_nodes
-    V3Stack visited;
-    create_stack(&visited, num_nodes);
-    int num_visited = 0;
-    Vector3 pos = {0, 0, 0};
-    byte dirs[6];
-    byte num_dirs, selected_dir;
-    while (num_visited < num_nodes) {
-        //mark current node as visited
-        if (nodes[pos_in_array(pos, dimensions)].visited == 0) {
-            num_visited++;
-            nodes[pos_in_array(pos, dimensions)].visited = 1;
-            Push(&visited, pos);
-        }
-
-        // get list of all nodes that can be traveled to and pick a random one
-        num_dirs = 0;
-        for (byte i = 0; i < 6; i++) if (contains(bounding_box, vecadd(pos, directions_v[i])) && !nodes[pos_in_array(vecadd(pos, directions_v[i]), dimensions)].visited) dirs[num_dirs++] = i;
-
-        if (num_dirs > 0) { // a new path is available
-            selected_dir = dirs[rand() % num_dirs];
-
-            // set walls to 0 bewteen 2 nodes
-            nodes[pos_in_array(pos, dimensions)].walls[selected_dir] = 0;
-            pos = vecadd(pos, directions_v[selected_dir]);
-            nodes[pos_in_array(pos, dimensions)].walls[(selected_dir + 3) % 6] = 0;
-        }
-        else {
-            Pop(&visited);
-            pos = Peek(&visited);
-        }
-    }
-    free_stack(&visited);
-    return nodes;
-}
-
 
 byte grid_contains(Vector3 dim, int pt, byte dir) {
     switch (dir) {
         case NORTH: return pt >= dim.x;
-        case EAST: return pt % dim.x < dim.x - 1;
+        case EAST:  return pt % dim.x < dim.x - 1;
+        case UP:    return 0;
         case SOUTH: return pt < dim.x * (dim.y - 1);
-        case WEST: return pt % dim.x > 0;
-        default: return 0;
+        case WEST:  return pt % dim.x > 0;
+        case DOWN:  return 0;
+        default:    return 0;
     }
 }
 
-Node *improved_wilson(Vector3 dim) {
-    int num_nodes = dim.x * dim.y, unvisited_nodes = num_nodes, start_node = 0, current_node;
+Node *maze_backtrack(Vector3 dim) {
+    int num_nodes = dim.x * dim.y, visited_nodes = 0, current_node = 0;
     Node *nodes = malloc(sizeof(Node) * num_nodes);
     int direction_offsets[6] = {
         -dim.x,        /*NORTH*/
@@ -177,28 +103,68 @@ Node *improved_wilson(Vector3 dim) {
     };
     byte available_directions[6], num_available_dirs, selected_dir = 0;
 
-    for (int i = 0; i < num_nodes; i++) nodes[i] = (Node){0, 0, {1, 1, 1, 1, 1, 1}, -1};
-    nodes[0].visited = INMAZE;
-    unvisited_nodes--;
+    for (int i = 0; i < num_nodes; i++) nodes[i] = (Node){0, 0, {1, 1, 1, 1, 1, 1}};
+    Stack visited;
+    create_stack(&visited, num_nodes);
 
-    while (unvisited_nodes > 0) {
+    while (visited_nodes < num_nodes) {
+        if (!nodes[current_node].visited) {
+            nodes[current_node].visited = VISITED;
+            visited_nodes++;
+            push(&visited, current_node);
+        }
+
+        num_available_dirs = 0;
+        for (byte i = 0; i < 6; i++) if (grid_contains(dim, current_node, i) && !nodes[current_node + direction_offsets[i]].visited) available_directions[num_available_dirs++] = i;
+        if (num_available_dirs > 0) {
+            selected_dir = available_directions[rand() % num_available_dirs];
+            nodes[current_node].walls[selected_dir] = 0;
+            current_node += direction_offsets[selected_dir];
+            nodes[current_node].walls[(selected_dir + 3) % 6] = 0;
+        } else {
+            pop(&visited);
+            current_node = peek(&visited);
+        }
+    }
+    free_stack(&visited);
+    return nodes;
+}
+
+Node *maze_wilson(Vector3 dim) {
+    int num_nodes = dim.x * dim.y, visited_nodes = 0, start_node = 0, current_node;
+    Node *nodes = malloc(sizeof(Node) * num_nodes);
+    int direction_offsets[6] = {
+        -dim.x,        /*NORTH*/
+        1,             /*EAST*/
+        dim.x * dim.y, /*UP*/
+        dim.x,         /*SOUTH*/
+        -1,            /*WEST*/
+        -dim.x * dim.y /*DOWN*/
+    };
+    byte available_directions[6], num_available_dirs, selected_dir = 0;
+
+    for (int i = 0; i < num_nodes; i++) nodes[i] = (Node){0, 0, {1, 1, 1, 1, 1, 1}};
+    nodes[0].visited = INMAZE;
+    visited_nodes++;
+
+    while (visited_nodes < num_nodes) {
         while (nodes[start_node].visited == INMAZE) start_node++;
         current_node = start_node;
         while (nodes[current_node].visited != INMAZE) {
             num_available_dirs = 0;
             for (byte i = 0; i < 6; i++) if (grid_contains(dim, current_node, i)) available_directions[num_available_dirs++] = i;
             selected_dir = available_directions[rand() % num_available_dirs];
-            nodes[current_node].parent_dir = selected_dir; // set direction of next node
+            nodes[current_node].next_dir = selected_dir;
             current_node += direction_offsets[selected_dir];
         }
         current_node = start_node;
         while (nodes[current_node].visited != INMAZE) {
             nodes[current_node].visited = INMAZE;
-            selected_dir = nodes[current_node].parent_dir;
+            selected_dir = nodes[current_node].next_dir;
             nodes[current_node].walls[selected_dir] = 0;
-            current_node += direction_offsets[nodes[current_node].parent_dir];
+            current_node += direction_offsets[nodes[current_node].next_dir];
             nodes[current_node].walls[(selected_dir + 3) % 6] = 0;
-            unvisited_nodes--;
+            visited_nodes++;
         }
     }
     return nodes;
@@ -266,8 +232,8 @@ int main(int argc, char **argv) {
         (color_rgb){0xff, 0xff, 0xff},
         (color_rgb){0x00, 0x00, 0x00},
         "out.bmp",
-        10,
-        40
+        1,
+        4
     };
     char opt_save_image = 1;
 
@@ -418,7 +384,7 @@ int main(int argc, char **argv) {
 
     if (option_timed) clock_gettime(CLOCK_REALTIME, &start);
 
-    Node *nodes = improved_wilson(dimensions);
+    Node *nodes = improved_basic(dimensions);
 
     if (option_timed) {
         clock_gettime(CLOCK_REALTIME, &finish);
