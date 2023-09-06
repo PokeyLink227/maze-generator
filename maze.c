@@ -153,99 +153,54 @@ Node *create_maze_basic(Vector3 dimensions) {
     return nodes;
 }
 
-/*
-create a maze using wilson's algorithm
-*/
-Node *create_maze_wilson(Vector3 dimensions) {
-    int num_nodes = dimensions.x * dimensions.y * dimensions.z;
-    Node *nodes = (Node *)malloc(sizeof(struct Node) * num_nodes);
-    Vector3 *open = (Vector3 *)malloc(sizeof(struct Vector3) * num_nodes); // stores node positions
-    int *open_pos = (int *)malloc(sizeof(int) * num_nodes); // stores index of node position in open list
-    if (!nodes || !open || !open_pos) {
-        printf("Failed to allocate enough memory\n");
-        exit(1);
+
+byte grid_contains(Vector3 dim, int pt, byte dir) {
+    switch (dir) {
+        case NORTH: return pt >= dim.x;
+        case EAST: return pt % dim.x < dim.x - 1;
+        case SOUTH: return pt < dim.x * (dim.y - 1);
+        case WEST: return pt % dim.x > 0;
+        default: return 0;
     }
-    for (int i = 0; i < num_nodes; i++) {
-        nodes[i] = (Node){0, 0, {1, 1, 1, 1, 1, 1}, -1};
-        open[i] = (Vector3){i % dimensions.x, i / dimensions.x % dimensions.y, i / (dimensions.x * dimensions.y)};
-        open_pos[i] = i;
-    }
-    box bounding_box = (box){(Vector3){0, 0, 0}, dimensions};
-    Vector3 directions_v[6] = {
-        {0, -1, 0},
-        {1, 0, 0},
-        {0, 0, 1},
-        {0, 1, 0},
-        {-1, 0, 0},
-        {0, 0, -1},
+}
+
+Node *improved_wilson(Vector3 dim) {
+    int num_nodes = dim.x * dim.y, unvisited_nodes = num_nodes, start_node = 0, current_node;
+    Node *nodes = malloc(sizeof(Node) * num_nodes);
+    int direction_offsets[6] = {
+        -dim.x,        /*NORTH*/
+        1,             /*EAST*/
+        dim.x * dim.y, /*UP*/
+        dim.x,         /*SOUTH*/
+        -1,            /*WEST*/
+        -dim.x * dim.y /*DOWN*/
     };
+    byte available_directions[6], num_available_dirs, selected_dir = 0;
 
-    int open_len = num_nodes, current_node_index, next_node_index;
+    for (int i = 0; i < num_nodes; i++) nodes[i] = (Node){0, 0, {1, 1, 1, 1, 1, 1}, -1};
+    nodes[0].visited = INMAZE;
+    unvisited_nodes--;
 
-    int n = rand() % open_len;
-    open[n] = open[--open_len]; // delete node n from list found at index open_pos[n]
-    open_pos[open_len] = n;
-    nodes[n].visited = INMAZE;
-
-    byte dirs[6];
-    byte num_dirs, selected_dir;
-    Vector3 current_node;
-
-    while (open_len > 0) {
-        // select an unvisited node
-        do {
-            n = rand() % open_len;
-            current_node = open[n];
-            open[n] = open[--open_len];
-            open_pos[pos_in_array(open[open_len], dimensions)] = n;
-            current_node_index = pos_in_array(current_node, dimensions);
-        } while (nodes[current_node_index].visited == INMAZE);
-        nodes[current_node_index].parent = -1;
-        // make a loop-erased random walk to the first node in the maze
-        while (1) {
-            nodes[current_node_index].visited = VISITED;
-            // select valid direction
-            num_dirs = 0;
-            for (byte i = 0; i < 6; i++) if (contains(bounding_box, vecadd(current_node, directions_v[i]))) dirs[num_dirs++] = i;
-            selected_dir = dirs[rand() % num_dirs];
-            next_node_index = pos_in_array(vecadd(current_node, directions_v[selected_dir]), dimensions);
-
-            if (nodes[next_node_index].visited == VISITED) {
-                int fallback = next_node_index;
-                // set all nodes to unvisited until reaching the next node index again
-                while (current_node_index != fallback) {
-                    nodes[current_node_index].visited = UNVISITED;
-                    current_node_index = nodes[current_node_index].parent;
-                }
-                current_node = (Vector3){current_node_index % dimensions.x, current_node_index / dimensions.x % dimensions.y, current_node_index / (dimensions.x * dimensions.y)};
-            } else {
-                nodes[next_node_index].parent = current_node_index;
-                nodes[next_node_index].parent_dir = (selected_dir + 3) % 6;
-                current_node = vecadd(current_node, directions_v[selected_dir]);
-                current_node_index = next_node_index;
-            }
-            if (nodes[next_node_index].visited == INMAZE) break;
+    while (unvisited_nodes > 0) {
+        while (nodes[start_node].visited == INMAZE) start_node++;
+        current_node = start_node;
+        while (nodes[current_node].visited != INMAZE) {
+            num_available_dirs = 0;
+            for (byte i = 0; i < 6; i++) if (grid_contains(dim, current_node, i)) available_directions[num_available_dirs++] = i;
+            selected_dir = available_directions[rand() % num_available_dirs];
+            nodes[current_node].parent_dir = selected_dir; // set direction of next node
+            current_node += direction_offsets[selected_dir];
         }
-        // trace and add visited nodes to maze
-        int length = 0;
-        while (1) {
-            length++;
-            nodes[current_node_index].visited = INMAZE;
-            nodes[current_node_index].walls[nodes[current_node_index].parent_dir] = 0;
-            nodes[nodes[current_node_index].parent].walls[(nodes[current_node_index].parent_dir + 3) % 6] = 0;
-            current_node_index = nodes[current_node_index].parent;
-
-            if (nodes[current_node_index].parent == -1) {
-                nodes[current_node_index].visited = INMAZE;
-                break;
-            }
-
-            open[open_pos[current_node_index]] = open[--open_len];
-            open_pos[pos_in_array(open[open_len], dimensions)] = open_pos[current_node_index];
+        current_node = start_node;
+        while (nodes[current_node].visited != INMAZE) {
+            nodes[current_node].visited = INMAZE;
+            selected_dir = nodes[current_node].parent_dir;
+            nodes[current_node].walls[selected_dir] = 0;
+            current_node += direction_offsets[nodes[current_node].parent_dir];
+            nodes[current_node].walls[(selected_dir + 3) % 6] = 0;
+            unvisited_nodes--;
         }
     }
-    free(open);
-    free(open_pos);
     return nodes;
 }
 
@@ -463,7 +418,7 @@ int main(int argc, char **argv) {
 
     if (option_timed) clock_gettime(CLOCK_REALTIME, &start);
 
-    Node *nodes = create_maze_wilson(dimensions);
+    Node *nodes = improved_wilson(dimensions);
 
     if (option_timed) {
         clock_gettime(CLOCK_REALTIME, &finish);
