@@ -56,15 +56,15 @@ typedef struct V3Stack {
     Vector3 *elements;
 } V3Stack;
 
-V3Stack *create_stack(int size) {
-    V3Stack *s = (V3Stack *)malloc(sizeof(V3Stack) + sizeof(Vector3) * size);
+char create_stack(V3Stack *s, int size) {
+    s->elements = (Vector3 *)malloc(sizeof(Vector3) * size);
     s->max_size = size;
     s->top_element = -1;
-    return s;
+    return 1;
 }
 
 void free_stack(V3Stack *s) {
-    free(s);
+    free(s->elements);
     return;
 }
 
@@ -101,7 +101,7 @@ byte contains(box box, Vector3 point) {
     return 1;
 }
 
-Node *create_maze_basic(Vector3 dimensions, Vector3 *exclusions) {
+Node *create_maze_basic(Vector3 dimensions) {
     int num_nodes = dimensions.x * dimensions.y * dimensions.z;
     Node *nodes = (Node *)malloc(sizeof(Node) * num_nodes);
     // set visited to 0 and all walls to active (1)
@@ -118,18 +118,18 @@ Node *create_maze_basic(Vector3 dimensions, Vector3 *exclusions) {
     };
 
     // in order to add rooms, set nodes to visited and increment starting num_visited value. to save memory you can also create a smaller stack and decrement num_nodes
-    V3Stack *visited = create_stack(num_nodes);
+    V3Stack visited;
+    create_stack(&visited, num_nodes);
     int num_visited = 0;
     Vector3 pos = {0, 0, 0};
     byte dirs[6];
     byte num_dirs, selected_dir;
-
     while (num_visited < num_nodes) {
         //mark current node as visited
         if (nodes[pos_in_array(pos, dimensions)].visited == 0) {
             num_visited++;
             nodes[pos_in_array(pos, dimensions)].visited = 1;
-            Push(visited, pos);
+            Push(&visited, pos);
         }
 
         // get list of all nodes that can be traveled to and pick a random one
@@ -145,28 +145,31 @@ Node *create_maze_basic(Vector3 dimensions, Vector3 *exclusions) {
             nodes[pos_in_array(pos, dimensions)].walls[(selected_dir + 3) % 6] = 0;
         }
         else {
-            Pop(visited);
-            pos = Peek(visited);
+            Pop(&visited);
+            pos = Peek(&visited);
         }
     }
-    free_stack(visited);
+    free_stack(&visited);
     return nodes;
 }
 
 /*
 create a maze using wilson's algorithm
 */
-Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
+Node *create_maze_wilson(Vector3 dimensions) {
     int num_nodes = dimensions.x * dimensions.y * dimensions.z;
     Node *nodes = (Node *)malloc(sizeof(struct Node) * num_nodes);
     Vector3 *open = (Vector3 *)malloc(sizeof(struct Vector3) * num_nodes); // stores node positions
     int *open_pos = (int *)malloc(sizeof(int) * num_nodes); // stores index of node position in open list
+    if (!nodes || !open || !open_pos) {
+        printf("Failed to allocate enough memory\n");
+        exit(1);
+    }
     for (int i = 0; i < num_nodes; i++) {
         nodes[i] = (Node){0, 0, {1, 1, 1, 1, 1, 1}, -1};
         open[i] = (Vector3){i % dimensions.x, i / dimensions.x % dimensions.y, i / (dimensions.x * dimensions.y)};
         open_pos[i] = i;
     }
-
     box bounding_box = (box){(Vector3){0, 0, 0}, dimensions};
     Vector3 directions_v[6] = {
         {0, -1, 0},
@@ -223,7 +226,6 @@ Node *create_maze_wilson(Vector3 dimensions, Vector3 *exclusions) {
             }
             if (nodes[next_node_index].visited == INMAZE) break;
         }
-
         // trace and add visited nodes to maze
         int length = 0;
         while (1) {
@@ -312,8 +314,9 @@ int main(int argc, char **argv) {
         10,
         40
     };
+    char opt_save_image = 1;
 
-    char *commands[17] = {
+    char *commands[18] = {
         "h",
         "help",
         "d",
@@ -330,11 +333,12 @@ int main(int argc, char **argv) {
         "wallwidth#",
         "ww#",
         "passagewidth#",
-        "pw#"
+        "pw#",
+        "n"
     };
 
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-') switch (matchcmd(argv[i] + 1, commands, 17)) {
+        if (argv[i][0] == '-') switch (matchcmd(argv[i] + 1, commands, 18)) {
             case 0:
             case 1:
                 printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -help          -h                 Shows this page\n  -dim           -d  [x] [y] {z}    Set custom dimensions for maze\n  -timer         -t                 Enable timer during maze generation\n  -seed          -s  [number]       Set the rng seed\n  -o                 [name]         Set output file name\n  -passagecolor  -pc [r] [g] [b]    Set rgb color of maze passages\n  -wallcolor     -wc [r] [g] [b]    Set rgb color of maze walls\n  -wallwidth     -ww [number]       Set width of walls in pixels\n  -passagewidth  -pw [number]       Set width of passages in pixels\n");
@@ -436,6 +440,9 @@ int main(int argc, char **argv) {
                     return 1;
                 }
                 break;
+            case 17:
+                opt_save_image = 0;
+                break;
             default:
                 printf("Error: unknown flag %s, use -h for help\n", argv[i]);
         }
@@ -452,18 +459,21 @@ int main(int argc, char **argv) {
 
     srand(rand_seed);
 
-    clock_t start, stop;
+    struct timespec start, finish, elapse;
 
-    if (option_timed) start = clock();
+    if (option_timed) clock_gettime(CLOCK_REALTIME, &start);
 
-    Node *nodes = create_maze_wilson(dimensions, 0);
+    Node *nodes = create_maze_wilson(dimensions);
 
     if (option_timed) {
-        stop = clock();
-        printf("time: %ld\n", stop - start);
+        clock_gettime(CLOCK_REALTIME, &finish);
+        elapse.tv_sec = finish.tv_sec - start.tv_sec;
+        elapse.tv_nsec = finish.tv_nsec - start.tv_nsec;
+        if (elapse.tv_sec > 0 && elapse.tv_nsec < 0) elapse.tv_nsec = 1000000000 - elapse.tv_nsec;
+        printf("time: %d.%.9ld seconds\n", (int)elapse.tv_sec, elapse.tv_nsec);
     }
 
-    generate_image(dimensions, nodes, opt);
+    if (opt_save_image) generate_image(dimensions, nodes, opt);
 
     //for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i].visited ? "visited" : "not visited"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'));
 
