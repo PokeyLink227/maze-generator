@@ -74,7 +74,7 @@ int peek(Stack *s) {
     return s->elements[s->top_element];
 }
 
-byte is_empty(Stack *s) {
+byte stack_is_empty(Stack *s) {
     return s->top_element == 0;
 }
 
