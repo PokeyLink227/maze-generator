@@ -90,6 +90,13 @@ byte grid_contains(Vector3 dim, int pt, byte dir) {
     }
 }
 
+/*
+https://www.astrolog.org/labyrnth/algrithm.htm
+growing tree
+hunt and kill
+*/
+
+
 Node *maze_backtrack(Vector3 dim) {
     int num_nodes = dim.x * dim.y, visited_nodes = 0, current_node = 0;
     Node *nodes = malloc(sizeof(Node) * num_nodes);
