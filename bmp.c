@@ -42,7 +42,7 @@ byte *generate_pixel_array(byte *header, color_rgb *pixels) {
     return pixel_array;
 }
 
-void export_image(byte *header, byte *pixel_array, char *file_name) {
+void export_image(byte *header, byte *pixel_array, const char *file_name) {
     FILE *fp = fopen(file_name, "wb");
     fwrite(header, 1, 54, fp);
     fwrite(pixel_array, 1, *((int *)(header + 34)), fp);
@@ -50,7 +50,7 @@ void export_image(byte *header, byte *pixel_array, char *file_name) {
     return;
 }
 
-byte save_image(bmp_image img, char *file_name) {
+byte save_image(bmp_image img, const char *file_name) {
     int padding = img.width * 3 % 4 == 0 ? 0 : 4 - img.width * 3 % 4;
     byte *img_raw = (byte *)malloc(img.height * (img.width * 3 + padding) + 54);
     for (int i = 0; i < 54; i++) img_raw[i] = 0x00;
@@ -88,7 +88,7 @@ byte save_image(bmp_image img, char *file_name) {
     return 1;
 }
 
-bmp_image load_image(char *file_name) {
+bmp_image load_image(const char *file_name) {
     bmp_image img = (bmp_image){0, 0, 0};
     FILE *fp = fopen(file_name, "rb");
     byte *header = malloc(54);

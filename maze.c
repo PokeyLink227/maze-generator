@@ -96,6 +96,30 @@ growing tree
 hunt and kill
 */
 
+Node *maze_growingtree(Vector3 dim) {
+    int num_nodes = dim.x * dim.y, visited_nodes = 0, current_node = 0;
+    Node *nodes = malloc(sizeof(Node) * num_nodes);
+    int direction_offsets[6] = {
+        -dim.x,        /*NORTH*/
+        1,             /*EAST*/
+        dim.x * dim.y, /*UP*/
+        dim.x,         /*SOUTH*/
+        -1,            /*WEST*/
+        -dim.x * dim.y /*DOWN*/
+    };
+    byte available_directions[6], num_available_dirs, selected_dir = 0;
+
+    for (int i = 0; i < num_nodes; i++) nodes[i] = (Node){0, 0, {1, 1, 1, 1, 1, 1}};
+    Stack visited;
+    create_stack(&visited, num_nodes);
+
+    while (visited_nodes < num_nodes) {
+
+    }
+
+    free_stack(&visited);
+    return nodes;
+}
 
 Node *maze_backtrack(Vector3 dim) {
     int num_nodes = dim.x * dim.y, visited_nodes = 0, current_node = 0;
@@ -122,7 +146,10 @@ Node *maze_backtrack(Vector3 dim) {
         }
 
         num_available_dirs = 0;
-        for (byte i = 0; i < 6; i++) if (grid_contains(dim, current_node, i) && !nodes[current_node + direction_offsets[i]].visited) available_directions[num_available_dirs++] = i;
+        for (byte i = 0; i < 6; i++)
+            if (grid_contains(dim, current_node, i) && !nodes[current_node + direction_offsets[i]].visited)
+                available_directions[num_available_dirs++] = i;
+                
         if (num_available_dirs > 0) {
             selected_dir = available_directions[rand() % num_available_dirs];
             nodes[current_node].walls[selected_dir] = 0;
