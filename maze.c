@@ -149,7 +149,7 @@ Node *maze_backtrack(Vector3 dim) {
         for (byte i = 0; i < 6; i++)
             if (grid_contains(dim, current_node, i) && !nodes[current_node + direction_offsets[i]].visited)
                 available_directions[num_available_dirs++] = i;
-                
+
         if (num_available_dirs > 0) {
             selected_dir = available_directions[rand() % num_available_dirs];
             nodes[current_node].walls[selected_dir] = 0;
@@ -418,7 +418,7 @@ int main(int argc, char **argv) {
 
     if (option_timed) clock_gettime(CLOCK_REALTIME, &start);
 
-    Node *nodes = improved_basic(dimensions);
+    Node *nodes = maze_backtrack(dimensions);
 
     if (option_timed) {
         clock_gettime(CLOCK_REALTIME, &finish);

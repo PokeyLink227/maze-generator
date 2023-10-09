@@ -16,8 +16,8 @@ byte *generate_header(int, int);
 
 byte *generate_pixel_array(byte *, color_rgb *);
 
-void export_image(byte *, byte *, char *);
+void export_image(byte *, byte *, const char *);
 
-byte save_image(bmp_image, char *);
+byte save_image(bmp_image, const char *);
 
-bmp_image load_image(char *);
+bmp_image load_image(const char *);
