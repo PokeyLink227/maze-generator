@@ -4,7 +4,7 @@ byte *generate_header(int width, int height) {
     byte *header = (byte *)malloc(54);
     for (int i = 0; i < 54; i++) header[i] = 0x00;
 
-    int padding = width * 3 % 4 == 0 ? 0 : 4 - width * 3 % 4;
+    int padding = (4 - width * 3 % 4) % 4;
 
     //bitmap header
     header[0] = 'B';
@@ -27,7 +27,7 @@ byte *generate_header(int width, int height) {
 byte *generate_pixel_array(byte *header, color_rgb *pixels) {
     int width = *((int *)(header + 18)),
     height = *((int *)(header + 22)),
-    padding = width * 3 % 4 == 0 ? 0 : 4 - width * 3 % 4;
+    padding = (4 - width * 3 % 4) % 4;
     byte *pixel_array = (byte *)malloc(*((int *)(header + 34)));
 
     int pos = 0;
@@ -51,7 +51,7 @@ void export_image(byte *header, byte *pixel_array, const char *file_name) {
 }
 
 byte save_image(bmp_image img, const char *file_name) {
-    int padding = img.width * 3 % 4 == 0 ? 0 : 4 - img.width * 3 % 4;
+    int padding = (4 - img.width * 3 % 4) % 4;
     byte *img_raw = (byte *)malloc(img.height * (img.width * 3 + padding) + 54);
     for (int i = 0; i < 54; i++) img_raw[i] = 0x00;
 
