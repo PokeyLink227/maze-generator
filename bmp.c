@@ -104,8 +104,7 @@ bmp_image load_image(const char *file_name) {
     free(header);
 
     img.pixels = malloc(sizeof(color_rgb) * img.width * img.height);
-    int padding = img.width * 3 % 4 == 0 ? 0 : 4 - img.width * 3 % 4;
-    int pos = 0;
+    int padding = (4 - img.width * 3 % 4) % 4, pos = 0;
     for (int h = img.height - 1; h >= 0; h--) {
         for (int w = 0; w < img.width; w++) {
             // might be faster to use p, p + 1, p + 2 then increment p because of cpu mem blocking NOTE: it is faster :D
