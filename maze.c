@@ -296,7 +296,7 @@ int main(int argc, char **argv) {
         if (argv[i][0] == '-') switch (matchcmd(argv[i] + 1, commands, 18)) {
             case 0:
             case 1:
-                printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -help          -h                 Shows this page\n  -dim           -d  [x] [y] {z}    Set custom dimensions for maze\n  -timer         -t                 Enable timer during maze generation\n  -seed          -s  [number]       Set the rng seed\n  -o                 [name]         Set output file name\n  -passagecolor  -pc [r] [g] [b]    Set rgb color of maze passages\n  -wallcolor     -wc [r] [g] [b]    Set rgb color of maze walls\n  -wallwidth     -ww [number]       Set width of walls in pixels\n  -passagewidth  -pw [number]       Set width of passages in pixels\n");
+                printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -help          -h                 Shows this page\n  -dim           -d  [x] [y] {z}    Set custom dimensions for maze\n  -timer         -t                 Enable timer during maze generation\n  -seed          -s  [number]       Set the rng seed\n                 -o   [name]         Set output file name\n  -passagecolor  -pc [r] [g] [b]    Set rgb color of maze passages\n  -wallcolor     -wc [r] [g] [b]    Set rgb color of maze walls\n  -wallwidth     -ww [number]       Set width of walls in pixels\n  -passagewidth  -pw [number]       Set width of passages in pixels\n");
                 return 1;
                 break;
             case 2:
