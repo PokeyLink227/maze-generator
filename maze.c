@@ -296,7 +296,7 @@ int main(int argc, char **argv) {
         if (argv[i][0] == '-') switch (matchcmd(argv[i] + 1, commands, 18)) {
             case 0:
             case 1:
-                printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -help          -h                 Shows this page\n  -dim           -d  [x] [y] {z}    Set custom dimensions for maze\n  -timer         -t                 Enable timer during maze generation\n  -seed          -s  [number]       Set the rng seed\n                 -o   [name]         Set output file name\n  -passagecolor  -pc [r] [g] [b]    Set rgb color of maze passages\n  -wallcolor     -wc [r] [g] [b]    Set rgb color of maze walls\n  -wallwidth     -ww [number]       Set width of walls in pixels\n  -passagewidth  -pw [number]       Set width of passages in pixels\n");
+                printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -help          -h                 Shows this page\n  -dim           -d  [x] [y] {z}    Set custom dimensions for maze\n  -timer         -t                 Enable timer during maze generation\n  -seed          -s  [number]       Set the rng seed\n                 -o  [name]         Set output file name\n  -passagecolor  -pc [r] [g] [b]    Set rgb color of maze passages\n  -wallcolor     -wc [r] [g] [b]    Set rgb color of maze walls\n  -wallwidth     -ww [number]       Set width of walls in pixels\n  -passagewidth  -pw [number]       Set width of passages in pixels\n");
                 return 1;
                 break;
             case 2:
@@ -307,7 +307,7 @@ int main(int argc, char **argv) {
                     i += 2;
                     if (i + 1 < argc && (argv[i + 1][0] >= '0' && argv[i + 1][0] <= '9')) dimensions.z = atoi(argv[++i]);
                 } else {
-                    printf("Error: Flag -d requires 2-3 integers\n");
+                    printf("\x1b[91mError\x1b[0m: flag -d requires 2-3 integers\n");
                     return 1;
                 }
                 break;
@@ -319,7 +319,7 @@ int main(int argc, char **argv) {
                 if (argv[i][2]) rand_seed = atoi(argv[i] + 2);
                 else if (i + 1 < argc) rand_seed = atoi(argv[++i]);
                 else {
-                    printf("Error: flag -s requires an integer\n");
+                    printf("\x1b[91mError\x1b[0m: flag -s requires an integer\n");
                     return 1;
                 }
                 break;
@@ -327,7 +327,7 @@ int main(int argc, char **argv) {
                 if (argv[i][5]) rand_seed = atoi(argv[i] + 5);
                 else if (i + 1 < argc) rand_seed = atoi(argv[++i]);
                 else {
-                    printf("Error: flag -seed requires an integer\n");
+                    printf("\x1b[91mError\x1b[0m: flag -seed requires an integer\n");
                     return 1;
                 }
                 break;
@@ -335,7 +335,7 @@ int main(int argc, char **argv) {
                 if (argv[i][2]) opt.output_file = argv[i] + 2;
                 else if (i + 1 < argc) opt.output_file = argv[++i];
                 else {
-                    printf("Error: flag -o requires a file name\n");
+                    printf("\x1b[91mError\x1b[0m: flag -o requires a file name\n");
                     return 1;
                 }
                 break;
@@ -347,7 +347,7 @@ int main(int argc, char **argv) {
                     opt.fgcolor.blue = atoi(argv[i + 3]);
                     i += 3;
                 } else {
-                    printf("Error: flag -fg requires 3 integers\n");
+                    printf("\x1b[91mError\x1b[0m: flag -fg requires 3 integers\n");
                     return 1;
                 }
                 break;
@@ -359,7 +359,7 @@ int main(int argc, char **argv) {
                     opt.bgcolor.blue = atoi(argv[i + 3]);
                     i += 3;
                 } else {
-                    printf("Error: flag -bg requires 3 integers\n");
+                    printf("\x1b[91mError\x1b[0m: flag -bg requires 3 integers\n");
                     return 1;
                 }
                 break;
@@ -367,7 +367,7 @@ int main(int argc, char **argv) {
                 if (i + 1 < argc) {
                     opt.wall_width = atoi(argv[i + 1]);
                 } else {
-                    printf("Error: flag -wallwidth requires an integer\n");
+                    printf("\x1b[91mError\x1b[0m: flag -wallwidth requires an integer\n");
                     return 1;
                 }
                 break;
@@ -375,7 +375,7 @@ int main(int argc, char **argv) {
                 if (argv[i][3]) opt.wall_width = atoi(argv[i] + 3);
                 else if (i + 1 < argc) opt.wall_width = atoi(argv[i + 1]);
                 else {
-                    printf("Error: flag -ww requires an integer\n");
+                    printf("\x1b[91mError\x1b[0m: flag -ww requires an integer\n");
                     return 1;
                 }
                 break;
@@ -383,7 +383,7 @@ int main(int argc, char **argv) {
                 if (i + 1 < argc) {
                     opt.passage_width = atoi(argv[i + 1]);
                 } else {
-                    printf("Error: flag -pw requires an integer\n");
+                    printf("\x1b[91mError\x1b[0m: flag -pw requires an integer\n");
                     return 1;
                 }
                 break;
@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
                 if (argv[i][3]) opt.passage_width = atoi(argv[i] + 3);
                 else if (i + 1 < argc) opt.passage_width = atoi(argv[i + 1]);
                 else {
-                    printf("Error: flag -pw requires an integer\n");
+                    printf("\x1b[91mError\x1b[0m: flag -pw requires an integer\n");
                     return 1;
                 }
                 break;
@@ -399,12 +399,12 @@ int main(int argc, char **argv) {
                 opt_save_image = 0;
                 break;
             default:
-                printf("Error: unknown flag %s, use -h for help\n", argv[i]);
+                printf("\x1b[91mError\x1b[0m: unknown flag %s, use -h for help\n", argv[i]);
         }
     }
 
     if (!dimensions.x || !dimensions.y || !dimensions.z) {
-        printf("Error: Invalid maze dimensions\n");
+        printf("\x1b[91mError\x1b[0m: Invalid maze dimensions\n");
         return 1;
     }
 
