@@ -2,3 +2,5 @@ out.bmp
 maze.exe
 mz1.bmp
 mz2.bmp
+bmp.o
+maze.o
