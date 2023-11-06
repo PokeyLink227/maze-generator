@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "bmp.h"
+#include "color.h"
 
 enum direction {
     NORTH,
@@ -258,6 +259,8 @@ int matchcmd(char *str, char **cmds, int len) {
 }
 
 int main(int argc, char **argv) {
+
+    init_color();
 
     byte option_timed = 0;
     Vector3 dimensions = {10, 10, 1};

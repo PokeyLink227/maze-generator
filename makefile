@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -pedantic-errors
 
-maze: maze.o bmp.o
+maze: maze.o bmp.o color.h
 maze.o: maze.c bmp.h
 bmp.o: bmp.c bmp.h
 
