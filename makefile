@@ -11,4 +11,4 @@ obj\bmp.o: src\bmp.c src\bmp.h
 	$(CC) $(CFLAGS) src\bmp.c -c -o obj\bmp.o
 
 clean:
-	del obj\* maze.exe
+	del obj\* maze.exe /Q
