@@ -297,112 +297,112 @@ int main(int argc, char **argv) {
 
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') switch (matchcmd(argv[i] + 1, commands, 18)) {
-            case 0:
-            case 1:
-                printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -help          -h                 Shows this page\n  -dim           -d  [x] [y] {z}    Set custom dimensions for maze\n  -timer         -t                 Enable timer during maze generation\n  -seed          -s  [number]       Set the rng seed\n                 -o  [name]         Set output file name\n  -passagecolor  -pc [r] [g] [b]    Set rgb color of maze passages\n  -wallcolor     -wc [r] [g] [b]    Set rgb color of maze walls\n  -wallwidth     -ww [number]       Set width of walls in pixels\n  -passagewidth  -pw [number]       Set width of passages in pixels\n");
+        case 0:
+        case 1:
+            printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -help          -h                 Shows this page\n  -dim           -d  [x] [y] {z}    Set custom dimensions for maze\n  -timer         -t                 Enable timer during maze generation\n  -seed          -s  [number]       Set the rng seed\n                 -o  [name]         Set output file name\n  -passagecolor  -pc [r] [g] [b]    Set rgb color of maze passages\n  -wallcolor     -wc [r] [g] [b]    Set rgb color of maze walls\n  -wallwidth     -ww [number]       Set width of walls in pixels\n  -passagewidth  -pw [number]       Set width of passages in pixels\n");
+            return 1;
+            break;
+        case 2:
+        case 3:
+            if (i + 2 < argc && (argv[i + 1][0] >= '0' && argv[i + 1][0] <= '9') && (argv[i + 2][0] >= '0' && argv[i + 2][0] <= '9')) { // two more arguments that are also numbers exist
+                dimensions.x = atoi(argv[i + 1]);
+                dimensions.y = atoi(argv[i + 2]);
+                i += 2;
+                if (i + 1 < argc && (argv[i + 1][0] >= '0' && argv[i + 1][0] <= '9')) dimensions.z = atoi(argv[++i]);
+            } else {
+                printf("\x1b[91mError\x1b[0m: flag -d requires 2-3 integers\n");
                 return 1;
-                break;
-            case 2:
-            case 3:
-                if (i + 2 < argc && (argv[i + 1][0] >= '0' && argv[i + 1][0] <= '9') && (argv[i + 2][0] >= '0' && argv[i + 2][0] <= '9')) { // two more arguments that are also numbers exist
-                    dimensions.x = atoi(argv[i + 1]);
-                    dimensions.y = atoi(argv[i + 2]);
-                    i += 2;
-                    if (i + 1 < argc && (argv[i + 1][0] >= '0' && argv[i + 1][0] <= '9')) dimensions.z = atoi(argv[++i]);
-                } else {
-                    printf("\x1b[91mError\x1b[0m: flag -d requires 2-3 integers\n");
-                    return 1;
-                }
-                break;
-            case 4:
-            case 5:
-                option_timed = 1;
-                break;
-            case 6:
-                if (argv[i][2]) rand_seed = atoi(argv[i] + 2);
-                else if (i + 1 < argc) rand_seed = atoi(argv[++i]);
-                else {
-                    printf("\x1b[91mError\x1b[0m: flag -s requires an integer\n");
-                    return 1;
-                }
-                break;
-            case 7:
-                if (argv[i][5]) rand_seed = atoi(argv[i] + 5);
-                else if (i + 1 < argc) rand_seed = atoi(argv[++i]);
-                else {
-                    printf("\x1b[91mError\x1b[0m: flag -seed requires an integer\n");
-                    return 1;
-                }
-                break;
-            case 8:
-                if (argv[i][2]) opt.output_file = argv[i] + 2;
-                else if (i + 1 < argc) opt.output_file = argv[++i];
-                else {
-                    printf("\x1b[91mError\x1b[0m: flag -o requires a file name\n");
-                    return 1;
-                }
-                break;
-            case 9:
-            case 10:
-                if (i + 3 < argc) {
-                    opt.fgcolor.red = atoi(argv[i + 1]);
-                    opt.fgcolor.green = atoi(argv[i + 2]);
-                    opt.fgcolor.blue = atoi(argv[i + 3]);
-                    i += 3;
-                } else {
-                    printf("\x1b[91mError\x1b[0m: flag -fg requires 3 integers\n");
-                    return 1;
-                }
-                break;
-            case 11:
-            case 12:
-                if (i + 3 < argc) {
-                    opt.bgcolor.red = atoi(argv[i + 1]);
-                    opt.bgcolor.green = atoi(argv[i + 2]);
-                    opt.bgcolor.blue = atoi(argv[i + 3]);
-                    i += 3;
-                } else {
-                    printf("\x1b[91mError\x1b[0m: flag -bg requires 3 integers\n");
-                    return 1;
-                }
-                break;
-            case 13:
-                if (i + 1 < argc) {
-                    opt.wall_width = atoi(argv[i + 1]);
-                } else {
-                    printf("\x1b[91mError\x1b[0m: flag -wallwidth requires an integer\n");
-                    return 1;
-                }
-                break;
-            case 14:
-                if (argv[i][3]) opt.wall_width = atoi(argv[i] + 3);
-                else if (i + 1 < argc) opt.wall_width = atoi(argv[i + 1]);
-                else {
-                    printf("\x1b[91mError\x1b[0m: flag -ww requires an integer\n");
-                    return 1;
-                }
-                break;
-            case 15:
-                if (i + 1 < argc) {
-                    opt.passage_width = atoi(argv[i + 1]);
-                } else {
-                    printf("\x1b[91mError\x1b[0m: flag -pw requires an integer\n");
-                    return 1;
-                }
-                break;
-            case 16:
-                if (argv[i][3]) opt.passage_width = atoi(argv[i] + 3);
-                else if (i + 1 < argc) opt.passage_width = atoi(argv[i + 1]);
-                else {
-                    printf("\x1b[91mError\x1b[0m: flag -pw requires an integer\n");
-                    return 1;
-                }
-                break;
-            case 17:
-                opt_save_image = 0;
-                break;
-            default:
-                printf("\x1b[91mError\x1b[0m: unknown flag %s, use -h for help\n", argv[i]);
+            }
+            break;
+        case 4:
+        case 5:
+            option_timed = 1;
+            break;
+        case 6:
+            if (argv[i][2]) rand_seed = atoi(argv[i] + 2);
+            else if (i + 1 < argc) rand_seed = atoi(argv[++i]);
+            else {
+                printf("\x1b[91mError\x1b[0m: flag -s requires an integer\n");
+                return 1;
+            }
+            break;
+        case 7:
+            if (argv[i][5]) rand_seed = atoi(argv[i] + 5);
+            else if (i + 1 < argc) rand_seed = atoi(argv[++i]);
+            else {
+                printf("\x1b[91mError\x1b[0m: flag -seed requires an integer\n");
+                return 1;
+            }
+            break;
+        case 8:
+            if (argv[i][2]) opt.output_file = argv[i] + 2;
+            else if (i + 1 < argc) opt.output_file = argv[++i];
+            else {
+                printf("\x1b[91mError\x1b[0m: flag -o requires a file name\n");
+                return 1;
+            }
+            break;
+        case 9:
+        case 10:
+            if (i + 3 < argc) {
+                opt.fgcolor.red = atoi(argv[i + 1]);
+                opt.fgcolor.green = atoi(argv[i + 2]);
+                opt.fgcolor.blue = atoi(argv[i + 3]);
+                i += 3;
+            } else {
+                printf("\x1b[91mError\x1b[0m: flag -fg requires 3 integers\n");
+                return 1;
+            }
+            break;
+        case 11:
+        case 12:
+            if (i + 3 < argc) {
+                opt.bgcolor.red = atoi(argv[i + 1]);
+                opt.bgcolor.green = atoi(argv[i + 2]);
+                opt.bgcolor.blue = atoi(argv[i + 3]);
+                i += 3;
+            } else {
+                printf("\x1b[91mError\x1b[0m: flag -bg requires 3 integers\n");
+                return 1;
+            }
+            break;
+        case 13:
+            if (i + 1 < argc) {
+                opt.wall_width = atoi(argv[i + 1]);
+            } else {
+                printf("\x1b[91mError\x1b[0m: flag -wallwidth requires an integer\n");
+                return 1;
+            }
+            break;
+        case 14:
+            if (argv[i][3]) opt.wall_width = atoi(argv[i] + 3);
+            else if (i + 1 < argc) opt.wall_width = atoi(argv[i + 1]);
+            else {
+                printf("\x1b[91mError\x1b[0m: flag -ww requires an integer\n");
+                return 1;
+            }
+            break;
+        case 15:
+            if (i + 1 < argc) {
+                opt.passage_width = atoi(argv[i + 1]);
+            } else {
+                printf("\x1b[91mError\x1b[0m: flag -pw requires an integer\n");
+                return 1;
+            }
+            break;
+        case 16:
+            if (argv[i][3]) opt.passage_width = atoi(argv[i] + 3);
+            else if (i + 1 < argc) opt.passage_width = atoi(argv[i + 1]);
+            else {
+                printf("\x1b[91mError\x1b[0m: flag -pw requires an integer\n");
+                return 1;
+            }
+            break;
+        case 17:
+            opt_save_image = 0;
+            break;
+        default:
+            printf("\x1b[91mError\x1b[0m: unknown flag %s, use -h for help\n", argv[i]);
         }
     }
 
