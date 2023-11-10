@@ -1,5 +1,5 @@
-#ifndef POKEY_COLOR
-#define POKEY_COLOR
+#ifndef __POKEY_COLOR__
+#define __POKEY_COLOR__
 
 void init_color();
 
