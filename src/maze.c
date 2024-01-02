@@ -78,15 +78,23 @@ int peek(Stack *s) {
 byte stack_is_empty(Stack *s) {
     return s->top_element == 0;
 }
+/* does not retyurn currecct results on higher floors
 
+convert to point then compare
+
+*/
 byte grid_contains(Vector3 dim, int pt, byte dir) {
+    int x = pt % dim.x,
+        y = pt / dim.x % dim.y,
+        z = pt / dim.x / dim.y;
+
     switch (dir) {
-        case NORTH: return pt >= dim.x;
-        case EAST:  return pt % dim.x < dim.x - 1;
-        case UP:    return 0;
-        case SOUTH: return pt < dim.x * (dim.y - 1);
-        case WEST:  return pt % dim.x > 0;
-        case DOWN:  return 0;
+        case NORTH: return y > 0;
+        case EAST:  return x < dim.x - 1;
+        case UP:    return z < dim.z - 1;
+        case SOUTH: return y < dim.y - 1;
+        case WEST:  return x > 0;
+        case DOWN:  return z > 0;
         default:    return 0;
     }
 }
@@ -123,7 +131,7 @@ Node *maze_growingtree(Vector3 dim) {
 }
 
 Node *maze_backtrack(Vector3 dim) {
-    int num_nodes = dim.x * dim.y, visited_nodes = 0, current_node = 0;
+    int num_nodes = dim.x * dim.y * dim.z, visited_nodes = 0, current_node = 0;
     Node *nodes = malloc(sizeof(Node) * num_nodes);
     int direction_offsets[6] = {
         -dim.x,        /*NORTH*/
@@ -154,6 +162,7 @@ Node *maze_backtrack(Vector3 dim) {
         if (num_available_dirs > 0) {
             selected_dir = available_directions[rand() % num_available_dirs];
             nodes[current_node].walls[selected_dir] = 0;
+            //printf("-----%i + (%i)%i = %i\n", current_node, selected_dir, direction_offsets[selected_dir], current_node + direction_offsets[selected_dir]);
             current_node += direction_offsets[selected_dir];
             nodes[current_node].walls[(selected_dir + 3) % 6] = 0;
         } else {
@@ -161,12 +170,13 @@ Node *maze_backtrack(Vector3 dim) {
             current_node = peek(&visited);
         }
     }
+
     free_stack(&visited);
     return nodes;
 }
 
 Node *maze_wilson(Vector3 dim) {
-    int num_nodes = dim.x * dim.y, visited_nodes = 0, start_node = 0, current_node;
+    int num_nodes = dim.x * dim.y * dim.z, visited_nodes = 0, start_node = 0, current_node;
     Node *nodes = malloc(sizeof(Node) * num_nodes);
     int direction_offsets[6] = {
         -dim.x,        /*NORTH*/
@@ -259,7 +269,6 @@ int matchcmd(char *str, char **cmds, int len) {
 }
 
 int main(int argc, char **argv) {
-
     init_color();
 
     byte option_timed = 0;
@@ -413,7 +422,12 @@ int main(int argc, char **argv) {
 
     if (argc == 1) printf("No options provided, using defaults. Use -h to see help menu\n");
     if (dimensions.z == 1) printf("Generating 2D maze of size {x: %i, y: %i} with seed: %li\n", dimensions.x, dimensions.y, rand_seed);
-    else printf("Generating 3D maze of size {x: %i, y: %i, z: %i} with seed: %li.  Warning 3D mazes not fully supported yet\n", dimensions.x, dimensions.y, dimensions.z, rand_seed);
+    else {
+        opt.wall_width = 10;
+        opt.passage_width = 40;
+        printf("Generating 3D maze of size {x: %i, y: %i, z: %i} with seed: %li.  Warning 3D mazes not fully supported yet\n", dimensions.x, dimensions.y, dimensions.z, rand_seed);
+
+    }
 
     srand(rand_seed);
 
@@ -446,6 +460,7 @@ TODO:
 -add indication for 3d level change
 -add indication for start and end of mazes
 -add support for maze exclusions/rooms
+-add option to suppress output
 
 east = index + 1
 west = index - 1
