@@ -78,11 +78,7 @@ int peek(Stack *s) {
 byte stack_is_empty(Stack *s) {
     return s->top_element == 0;
 }
-/* does not retyurn currecct results on higher floors
 
-convert to point then compare
-
-*/
 byte grid_contains(Vector3 dim, int pt, byte dir) {
     int x = pt % dim.x,
         y = pt / dim.x % dim.y,
@@ -162,7 +158,6 @@ Node *maze_backtrack(Vector3 dim) {
         if (num_available_dirs > 0) {
             selected_dir = available_directions[rand() % num_available_dirs];
             nodes[current_node].walls[selected_dir] = 0;
-            //printf("-----%i + (%i)%i = %i\n", current_node, selected_dir, direction_offsets[selected_dir], current_node + direction_offsets[selected_dir]);
             current_node += direction_offsets[selected_dir];
             nodes[current_node].walls[(selected_dir + 3) % 6] = 0;
         } else {
