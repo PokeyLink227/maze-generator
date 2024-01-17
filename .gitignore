@@ -4,3 +4,4 @@ mz1.bmp
 mz2.bmp
 bmp.o
 maze.o
+terminal_tools.o
