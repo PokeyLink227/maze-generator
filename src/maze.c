@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "bmp.h"
-#include "color.h"
+#include "terminal_tools.h"
 
 enum direction {
     NORTH,
@@ -266,6 +266,7 @@ int matchcmd(char *str, char **cmds, int len) {
 int main(int argc, char **argv) {
     init_color();
 
+    int parse_status;
     byte option_timed = 0;
     Vector3 dimensions = {10, 10, 1};
     time_t rand_seed = time(0);
@@ -276,7 +277,7 @@ int main(int argc, char **argv) {
         1,
         4
     };
-    char opt_save_image = 1;
+    char opt_dont_save_image = 0, method = 0;
 
     Node *(* generation_methods[3])(Vector3) = {
         maze_backtrack,
@@ -284,141 +285,24 @@ int main(int argc, char **argv) {
         maze_growingtree
     };
 
-
-    char *commands[20] = {
-        "h",
-        "help",
-        "d",
-        "dim",
-        "t",
-        "timer",
-        "s#",
-        "seed#",
-        "o*",
-        "passagecolor#",
-        "pc#",
-        "wallcolor#",
-        "wc#",
-        "wallwidth#",
-        "ww#",
-        "passagewidth#",
-        "pw#",
-        "n",
-        "method#",
-        "m#"
+    struct terminal_command commands[10] = {
+        {TYPE_FLAG, "t", 0, &option_timed},
+        {TYPE_FLAG, "n", 0, &opt_dont_save_image},
+        {TYPE_OPTION, "dim", "UUu", &dimensions},
+        {TYPE_OPTION, "seed", "U", &rand_seed},
+        {TYPE_OPTION, "passagewidth", "U", &opt.passage_width},
+        {TYPE_OPTION, "wallwidth", "U", &opt.wall_width},
+        {TYPE_OPTION, "passagecolor", "BBB", &opt.fgcolor},
+        {TYPE_OPTION, "wallcolor", "BBB", &opt.bgcolor},
+        {TYPE_OPTION, "method", "U", &method},
+        {TYPE_OPTION, "out", "S", &opt.output_file}
     };
 
-    for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-') switch (matchcmd(argv[i] + 1, commands, 20)) {
-        case 0: /*h*/
-        case 1: /*help*/
-            printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n  -help          -h                 Shows this page\n  -dim           -d  [x] [y] {z}    Set custom dimensions for maze\n  -timer         -t                 Enable timer during maze generation\n  -seed          -s  [number]       Set the rng seed\n                 -o  [name]         Set output file name\n  -passagecolor  -pc [r] [g] [b]    Set rgb color of maze passages\n  -wallcolor     -wc [r] [g] [b]    Set rgb color of maze walls\n  -wallwidth     -ww [number]       Set width of walls in pixels\n  -passagewidth  -pw [number]       Set width of passages in pixels\n");
-            return 1;
-            break;
-        case 2: /*d*/
-        case 3: /*dim*/
-            if (i + 2 < argc && (argv[i + 1][0] >= '0' && argv[i + 1][0] <= '9') && (argv[i + 2][0] >= '0' && argv[i + 2][0] <= '9')) { // two more arguments that are also numbers exist
-                dimensions.x = atoi(argv[i + 1]);
-                dimensions.y = atoi(argv[i + 2]);
-                i += 2;
-                if (i + 1 < argc && (argv[i + 1][0] >= '0' && argv[i + 1][0] <= '9')) dimensions.z = atoi(argv[++i]);
-            } else {
-                printf("\x1b[91mError\x1b[0m: flag -d requires 2-3 integers\n");
-                return 1;
-            }
-            break;
-        case 4: /*t*/
-        case 5: /*timer*/
-            option_timed = 1;
-            break;
-        case 6: /*s*/
-            if (argv[i][2]) rand_seed = atoi(argv[i] + 2);
-            else if (i + 1 < argc) rand_seed = atoi(argv[++i]);
-            else {
-                printf("\x1b[91mError\x1b[0m: flag -s requires an integer\n");
-                return 1;
-            }
-            break;
-        case 7: /*seed*/
-            if (argv[i][5]) rand_seed = atoi(argv[i] + 5);
-            else if (i + 1 < argc) rand_seed = atoi(argv[++i]);
-            else {
-                printf("\x1b[91mError\x1b[0m: flag -seed requires an integer\n");
-                return 1;
-            }
-            break;
-        case 8: /*o*/
-            if (argv[i][2]) opt.output_file = argv[i] + 2;
-            else if (i + 1 < argc) opt.output_file = argv[++i];
-            else {
-                printf("\x1b[91mError\x1b[0m: flag -o requires a file name\n");
-                return 1;
-            }
-            break;
-        case 9: /*passagecolor*/
-        case 10: /*pc*/
-            if (i + 3 < argc) {
-                opt.fgcolor.red = atoi(argv[i + 1]);
-                opt.fgcolor.green = atoi(argv[i + 2]);
-                opt.fgcolor.blue = atoi(argv[i + 3]);
-                i += 3;
-            } else {
-                printf("\x1b[91mError\x1b[0m: flag -pc requires 3 integers\n");
-                return 1;
-            }
-            break;
-        case 11: /**/
-        case 12: /**/
-            if (i + 3 < argc) {
-                opt.bgcolor.red = atoi(argv[i + 1]);
-                opt.bgcolor.green = atoi(argv[i + 2]);
-                opt.bgcolor.blue = atoi(argv[i + 3]);
-                i += 3;
-            } else {
-                printf("\x1b[91mError\x1b[0m: flag -wc requires 3 integers\n");
-                return 1;
-            }
-            break;
-        case 13: /**/
-            if (i + 1 < argc) {
-                opt.wall_width = atoi(argv[i + 1]);
-            } else {
-                printf("\x1b[91mError\x1b[0m: flag -wallwidth requires an integer\n");
-                return 1;
-            }
-            break;
-        case 14: /**/
-            if (argv[i][3]) opt.wall_width = atoi(argv[i] + 3);
-            else if (i + 1 < argc) opt.wall_width = atoi(argv[i + 1]);
-            else {
-                printf("\x1b[91mError\x1b[0m: flag -ww requires an integer\n");
-                return 1;
-            }
-            break;
-        case 15: /**/
-            if (i + 1 < argc) {
-                opt.passage_width = atoi(argv[i + 1]);
-            } else {
-                printf("\x1b[91mError\x1b[0m: flag -pw requires an integer\n");
-                return 1;
-            }
-            break;
-        case 16: /**/
-            if (argv[i][3]) opt.passage_width = atoi(argv[i] + 3);
-            else if (i + 1 < argc) opt.passage_width = atoi(argv[i + 1]);
-            else {
-                printf("\x1b[91mError\x1b[0m: flag -pw requires an integer\n");
-                return 1;
-            }
-            break;
-        case 17: /**/
-            opt_save_image = 0;
-            break;
-        case 18: /**/
-        case 19: /**/
-        default:
-            printf("\x1b[91mError\x1b[0m: unknown flag %s, use -h for help\n", argv[i]);
-        }
+    parse_status = terminal_parse(commands, 10, argv, argc);
+    if (parse_status == PARSE_ERROR) return 1;
+    else if (parse_status == PARSE_HELP) {
+        printf("__HELP PAGE__\n");
+        return 1;
     }
 
     if (!dimensions.x || !dimensions.y || !dimensions.z) {
@@ -440,7 +324,7 @@ int main(int argc, char **argv) {
 
     if (option_timed) clock_gettime(CLOCK_REALTIME, &start);
 
-    Node *nodes = maze_backtrack(dimensions);
+    Node *nodes = generation_methods[method](dimensions);
 
     if (option_timed) {
         clock_gettime(CLOCK_REALTIME, &finish);
@@ -450,7 +334,7 @@ int main(int argc, char **argv) {
         printf("time: %d.%.9ld seconds\n", (int)elapse.tv_sec, elapse.tv_nsec);
     }
 
-    if (opt_save_image) generate_image(dimensions, nodes, opt);
+    if (!opt_dont_save_image) generate_image(dimensions, nodes, opt);
 
     //for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i].visited ? "visited" : "not visited"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'));
 
