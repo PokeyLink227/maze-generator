@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
     parse_status = terminal_parse(commands, 10, argv, argc);
     if (parse_status == PARSE_ERROR) return 1;
     else if (parse_status == PARSE_HELP) {
-        printf("__HELP PAGE__\n");
+        printf("Usage: maze {options}\nOptions: [] - Required, {} - Optional\n --help                        Shows this page\n --dim  [x] [y] {z}            Set custom dimensions for maze\n --seed [number]               Set the rng seed\n --out [name]                  Set output file name\n --method [number]             Change the method used to generate a maze\n --passagecolor [r] [g] [b]    Set rgb value of maze passages\n --wallcolor [r] [g] [b]       Set rgb value of maze walls\n --passagewidth [number]       Set pixel width of passages\n --wallwidth [number]          Set pixel width of walls\n\n  -t                           Enable timer during maze generation\n  -n                           Disable image generation\n\n");
         return 1;
     }
 
