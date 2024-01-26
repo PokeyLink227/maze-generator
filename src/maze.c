@@ -102,7 +102,7 @@ hunt and kill
 */
 
 Node *maze_growingtree(Vector3 dim) {
-    int num_nodes = dim.x * dim.y, visited_nodes = 0, current_node = 0;
+    int num_nodes = dim.x * dim.y, added_nodes = 0, current_node = 0;
     Node *nodes = malloc(sizeof(Node) * num_nodes);
     int direction_offsets[6] = {
         -dim.x,        /*NORTH*/
@@ -118,8 +118,8 @@ Node *maze_growingtree(Vector3 dim) {
     Stack visited;
     create_stack(&visited, num_nodes);
 
-    while (visited_nodes < num_nodes) {
-
+    while (added_nodes < num_nodes) {
+        
     }
 
     free_stack(&visited);
@@ -338,6 +338,7 @@ int main(int argc, char **argv) {
 
     //for (int i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++) printf("node %i is %s connected [%c, %c, %c, %c, %c, %c]\n", i, (nodes[i].visited ? "visited" : "not visited"), (nodes[i].walls[NORTH] ? '-' : 'N'), (nodes[i].walls[SOUTH] ? '-' : 'S'), (nodes[i].walls[EAST] ? '-' : 'E'), (nodes[i].walls[WEST] ? '-' : 'W'), (nodes[i].walls[UP] ? '-' : 'U'), (nodes[i].walls[DOWN] ? '-' : 'D'));
 
+    free(nodes);
     return 0;
 }
 
