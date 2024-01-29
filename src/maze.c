@@ -119,7 +119,7 @@ Node *maze_growingtree(Vector3 dim) {
     create_stack(&visited, num_nodes);
 
     while (added_nodes < num_nodes) {
-        
+
     }
 
     free_stack(&visited);
