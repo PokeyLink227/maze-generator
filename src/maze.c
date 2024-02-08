@@ -143,6 +143,8 @@ Node *maze_backtrack(Vector3 dim) {
     Stack visited;
     create_stack(&visited, num_nodes);
 
+    /* this is where you would remove the exclusions from the visited stack*/
+
     while (visited_nodes < num_nodes) {
         if (!nodes[current_node].visited) {
             nodes[current_node].visited = VISITED;
@@ -235,7 +237,7 @@ void generate_image(Vector3 dimensions, Node *data, image_options opt) {
 
     for (int i = 0; i < image_dimensions.z * image_dimensions.y; i++) pixels[i] = opt.bgcolor;
 
-    for (int z = 0; z < dimensions.z; z++) for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) {
+    for (int z = 0; z < dimensions.z; z++) for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) if (data[z * dimensions.x * dimensions.y + y * dimensions.x + x].visited){
         if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP] && !data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN])for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = multi_arrow[off_x + off_y * 40];
         else if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP]) for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = up_arrow[off_x + off_y * 40];
         else if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN]) for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = down_arrow[off_x + off_y * 40];
@@ -247,20 +249,6 @@ void generate_image(Vector3 dimensions, Node *data, image_options opt) {
 
     save_image((bmp_image){image_dimensions.z, image_dimensions.y, pixels}, opt.output_file);
     free(pixels);
-}
-
-int matchcmd(char *str, char **cmds, int len) {
-    char matched;
-    for (int i = 0; i < len; i++) {
-        matched = 1;
-        for (int c = 0; str[c] || cmds[i][c]; c++) {
-            if (cmds[i][c] == '#' && ((str[c] >= '0' && str[c] <= '9') || !str[c])) return i;
-            if (cmds[i][c] == '*') return i;
-            if (str[c] != cmds[i][c]) { matched = 0; break; }
-        }
-        if (matched) return i;
-    }
-    return -1;
 }
 
 int main(int argc, char **argv) {
