@@ -21,10 +21,6 @@ struct terminal_command {
     void *data;
 };
 
-struct {
-    char color_enabled;
-} pokey_terminal_options;
-
 void init_color();
 int terminal_parse(struct terminal_command *, int, char **, int);
 

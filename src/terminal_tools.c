@@ -1,5 +1,8 @@
 #include "terminal_tools.h"
 
+struct {
+    char color_enabled;
+} pokey_terminal_options;
 
 #if defined(_WIN32)
     #include <windows.h>
