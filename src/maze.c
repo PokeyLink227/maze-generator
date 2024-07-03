@@ -143,6 +143,8 @@ Node *maze_backtrack(Vector3 dim) {
     Stack visited;
     create_stack(&visited, num_nodes);
 
+    /* this is where you would remove the exclusions from the visited stack*/
+
     while (visited_nodes < num_nodes) {
         if (!nodes[current_node].visited) {
             nodes[current_node].visited = VISITED;
@@ -271,20 +273,6 @@ void generate_image(Vector3 dimensions, Node *data, image_options opt) {
 
     save_image((bmp_image){image_dimensions.z, image_dimensions.y, pixels}, opt.output_file);
     free(pixels);
-}
-
-int matchcmd(char *str, char **cmds, int len) {
-    char matched;
-    for (int i = 0; i < len; i++) {
-        matched = 1;
-        for (int c = 0; str[c] || cmds[i][c]; c++) {
-            if (cmds[i][c] == '#' && ((str[c] >= '0' && str[c] <= '9') || !str[c])) return i;
-            if (cmds[i][c] == '*') return i;
-            if (str[c] != cmds[i][c]) { matched = 0; break; }
-        }
-        if (matched) return i;
-    }
-    return -1;
 }
 
 int main(int argc, char **argv) {
