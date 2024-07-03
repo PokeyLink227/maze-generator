@@ -6,7 +6,8 @@
 
 enum terminal_command_type {
     TYPE_FLAG,
-    TYPE_OPTION
+    TYPE_OPTION,
+    TYPE_REQUIRED
 };
 
 enum terminal_parse_return {
@@ -15,17 +16,15 @@ enum terminal_parse_return {
     PARSE_HELP
 };
 
-struct terminal_command {
+typedef struct TerminalCommand {
     int type;
     const char * const name, * const format;
     void *data;
-};
-
-struct {
-    char color_enabled;
-} pokey_terminal_options;
+} TerminalCommand;
 
 void init_color();
-int terminal_parse(struct terminal_command *, int, char **, int);
+int terminal_parse(TerminalCommand *, int, char **, int);
+const char *get_extension(const char *);
+
 
 #endif /* __POKEY_TERMINAL_INTERFACE__ */

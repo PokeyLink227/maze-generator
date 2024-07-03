@@ -1,5 +1,9 @@
 #include "terminal_tools.h"
 
+struct {
+    char color_enabled;
+} pokey_terminal_options;
+
 
 #if defined(_WIN32)
     #include <windows.h>
@@ -17,11 +21,25 @@
     }
 #endif
 
+const char *get_extension(const char *filename) {
+    const char *start = filename;
+
+    while (*filename) {
+        if (*filename == '.') start = filename;
+        filename++;
+    }
+
+    return start;
+}
+
 /*
 does not allow program to accept non option arguments but this can be changed
 */
-int terminal_parse(struct terminal_command *cmds, int num_commands, char **args, int num_args) {
+int terminal_parse(TerminalCommand *cmds, int num_commands, char **args, int num_args) {
     int arg_index, cmd_index, i, j, matched, format_index;
+    char options_found[num_commands];
+
+    for (int i = 0; i < num_commands; i++) options_found[i] = 0;
 
     /* starts at 1 to ignore program name */
     for (arg_index = 1; arg_index < num_args; arg_index++) {
@@ -76,6 +94,8 @@ int terminal_parse(struct terminal_command *cmds, int num_commands, char **args,
                     }
                 }
                 if (!equals) continue;
+
+                options_found[cmd_index]++;
 
                 matched = 1;
                 format_index = 0;
@@ -156,6 +176,16 @@ int terminal_parse(struct terminal_command *cmds, int num_commands, char **args,
             }
         }
     }
+
+    int is_error = 0;
+    for (int i = 0; i < num_commands; i++) {
+        if (cmds[i].type == TYPE_REQUIRED && options_found[i] == 0) {
+            is_error = 1;
+            if (pokey_terminal_options.color_enabled) printf("\x1b[91mError\x1b[0m"); else printf("Error");
+            printf(": Missing required option --%s\n", cmds[i].name);
+        }
+    }
+    if (is_error) return PARSE_ERROR;
 
     return PARSE_SUCCESS;
 }
