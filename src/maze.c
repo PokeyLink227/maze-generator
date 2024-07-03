@@ -236,13 +236,37 @@ void generate_image(Vector3 dimensions, Node *data, image_options opt) {
     for (int i = 0; i < image_dimensions.z * image_dimensions.y; i++) pixels[i] = opt.bgcolor;
 
     for (int z = 0; z < dimensions.z; z++) for (int y = 0; y < dimensions.y; y++) for (int x = 0; x < dimensions.x; x++) {
-        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP] && !data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN])for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = multi_arrow[off_x + off_y * 40];
-        else if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP]) for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = up_arrow[off_x + off_y * 40];
-        else if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN]) for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = down_arrow[off_x + off_y * 40];
-        else for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = opt.fgcolor;
+        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP] && !data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN]) {
+            for (int off_y = 0; off_y < opt.passage_width; off_y++)
+                for (int off_x = 0; off_x < opt.passage_width; off_x++)
+                    pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = multi_arrow[off_x + off_y * 40];
+        }
+        else if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[UP]) {
+            for (int off_y = 0; off_y < opt.passage_width; off_y++)
+                for (int off_x = 0; off_x < opt.passage_width; off_x++)
+                    pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = up_arrow[off_x + off_y * 40];
+        }
+        else if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[DOWN]) {
+            for (int off_y = 0; off_y < opt.passage_width; off_y++)
+                for (int off_x = 0; off_x < opt.passage_width; off_x++)
+                    pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = down_arrow[off_x + off_y * 40];
+        }
+        else {
+            for (int off_y = 0; off_y < opt.passage_width; off_y++)
+                for (int off_x = 0; off_x < opt.passage_width; off_x++)
+                    pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = opt.fgcolor;
+        }
 
-        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[SOUTH]) for (int off_y = 0; off_y < opt.wall_width; off_y++) for (int off_x = 0; off_x < opt.passage_width; off_x++) pixels[((y + 1) * cell_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = opt.fgcolor;
-        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[EAST]) for (int off_y = 0; off_y < opt.passage_width; off_y++) for (int off_x = 0; off_x < opt.wall_width; off_x++) pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + ((x + 1) * cell_width + off_x) + (z * image_dimensions.x)] = opt.fgcolor;
+
+        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[SOUTH])
+            for (int off_y = 0; off_y < opt.wall_width; off_y++)
+                for (int off_x = 0; off_x < opt.passage_width; off_x++)
+                    pixels[((y + 1) * cell_width + off_y) * (image_dimensions.z) + (x * cell_width + opt.wall_width + off_x) + (z * image_dimensions.x)] = opt.fgcolor;
+
+        if (!data[z * dimensions.x * dimensions.y + y * dimensions.x + x].walls[EAST])
+            for (int off_y = 0; off_y < opt.passage_width; off_y++)
+                for (int off_x = 0; off_x < opt.wall_width; off_x++)
+                    pixels[(y * cell_width + opt.wall_width + off_y) * (image_dimensions.z) + ((x + 1) * cell_width + off_x) + (z * image_dimensions.x)] = opt.fgcolor;
     }
 
     save_image((bmp_image){image_dimensions.z, image_dimensions.y, pixels}, opt.output_file);
